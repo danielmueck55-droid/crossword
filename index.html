@@ -40,57 +40,6 @@
       text-shadow: 0 0 4px rgba(255,255,255,0.7);
     }
 
-    /* Difficulty bar now used as "Fehler-Anzeige" level */
-    #difficultyBar {
-      position: relative;
-      margin-top: 15px;
-      display: flex;
-      flex-direction: row;
-      justify-content: center;
-      background: rgba(255,255,255,0.9);
-      padding: 8px 12px;
-      border-radius: 14px;
-      gap: 10px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      z-index: 50;
-    }
-
-    @media (max-width: 600px) {
-      #difficultyBar {
-        position: relative;
-        right: 0;
-        top: 10px;
-        transform: none;
-        margin-top: 14px;
-        flex-direction: row;
-        justify-content: center;
-      }
-    }
-
-    .diffBtn {
-      border: none;
-      padding: 6px 14px;
-      border-radius: 10px;
-      background: #e3e3e3;
-      color: #333;
-      font-size: 15px;
-      cursor: pointer;
-      transition: all 0.25s ease;
-      font-weight: 500;
-      white-space: nowrap;
-    }
-
-    .diffBtn:hover {
-      background: #d0d0d0;
-    }
-
-    .diffBtn.active {
-      background: #b30000;
-      color: white;
-      transform: scale(1.05);
-      box-shadow: 0 0 8px rgba(179,0,0,0.5);
-    }
-
     /* Snowflakes */
     .snowflake {
       position: fixed;
@@ -102,34 +51,55 @@
       pointer-events: none;
       z-index: 1000;
     }
+
     @keyframes fall {
       to { transform: translateY(110vh); }
     }
 
-    /* Top info bar */
+    /* Top bar */
     #infoBar {
       margin-top: 15px;
-      font-size: 17px;
       display: flex;
-      gap: 20px;
+      gap: 12px;
       align-items: center;
+      justify-content: center;
     }
 
-    .miniLabel {
+    #hintButton {
+      border: none;
+      padding: 8px 18px;
+      border-radius: 999px;
+      background: white;
+      color: #b30000;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 3px 9px rgba(0,0,0,0.18);
       display: flex;
       align-items: center;
       gap: 6px;
-      background: white;
-      padding: 6px 12px;
-      border-radius: 8px;
-      box-shadow: 0 0 5px rgba(0,0,0,0.15);
-      font-size: 16px;
+      transition: all 0.25s ease;
     }
-    .miniLabel svg {
+
+    #hintButton svg {
       width: 18px;
       height: 18px;
       stroke: #b30000;
       stroke-width: 2;
+    }
+
+    #hintButton:hover {
+      background: #ffecec;
+      transform: translateY(-1px);
+    }
+
+    #hintButton.active {
+      background: #b30000;
+      color: white;
+      box-shadow: 0 0 10px rgba(179,0,0,0.7);
+    }
+    #hintButton.active svg {
+      stroke: #ffffff;
     }
 
     /* Puzzle frame */
@@ -147,16 +117,16 @@
     /* Crossword grid */
     #puzzle {
       display: grid;
-      grid-template-columns: repeat(15, 32px);
-      grid-auto-rows: 32px;
+      grid-template-columns: repeat(15, min(32px, 5vw));
+      grid-auto-rows: min(32px, 5vw);
       gap: 2px;
       transition: opacity 0.6s ease;
       justify-content: center;
     }
 
     .cross-cell {
-      width: 32px;
-      height: 32px;
+      width: 100%;
+      height: 100%;
       box-sizing: border-box;
       border-radius: 4px;
       border: 1px solid rgba(0,0,0,0.15);
@@ -165,11 +135,22 @@
       align-items: center;
       justify-content: center;
       position: relative;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
     }
 
     .cross-cell.block {
       background: #333;
       border: none;
+    }
+
+    .cross-cell.active-word {
+      background: #fff6d5;
+      box-shadow: 0 0 0 2px rgba(212,175,55,0.6);
+    }
+
+    .cross-cell.active-cell {
+      background: #ffe4cc;
+      box-shadow: 0 0 0 2px rgba(179,0,0,0.6);
     }
 
     .cross-input {
@@ -194,7 +175,7 @@
       border-radius: 3px;
     }
 
-    /* We keep this image element for layout compatibility, but hide it for the crossword */
+    /* hide original image but keep for layout parity if needed */
     #fullImage {
       display: none;
     }
@@ -258,6 +239,60 @@
       from { opacity: 1; }
       to   { opacity: 0; }
     }
+
+    /* Bottom sliding clue popup */
+    #clueBar {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      transform: translateY(100%);
+      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
+      padding: 10px 16px 14px;
+      display: flex;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    #clueInner {
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+      font-size: 15px;
+      color: #333;
+    }
+
+    #clueLabel {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #b30000;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    #clueText {
+      font-size: 15px;
+    }
+
+    #clueBar.visible {
+      transform: translateY(0);
+    }
+
+    @media (max-width: 600px) {
+      #frame {
+        max-width: 95vw;
+      }
+      #puzzle {
+        grid-template-columns: repeat(15, min(8vw, 30px));
+        grid-auto-rows: min(8vw, 30px);
+      }
+      #clueText {
+        font-size: 14px;
+      }
+    }
   </style>
 </head>
 
@@ -272,28 +307,19 @@
   <h2>Türchen 1 🎄🎁</h2>
 
   <div id="infoBar">
-    <div class="miniLabel">
+    <button id="hintButton" type="button">
       <svg viewBox="0 0 24 24" fill="none">
         <circle cx="12" cy="12" r="9"></circle>
-        <line x1="12" y1="12" x2="12" y2="7"></line>
-        <line x1="12" y1="12" x2="15" y2="12"></line>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <circle cx="12" cy="16" r="1"></circle>
       </svg>
-      <span id="timer">0</span>s
-    </div>
-
-    <div class="miniLabel">
-      <svg viewBox="0 0 24 24" fill="none">
-        <polyline points="8 6 2 12 8 18"></polyline>
-        <polyline points="16 6 22 12 16 18"></polyline>
-        <line x1="2" y1="12" x2="22" y2="12"></line>
-      </svg>
-      <span id="moveCount">0</span>
-    </div>
+      Hint Mode
+    </button>
   </div>
 
   <div id="frame">
     <div id="puzzle"></div>
-    <!-- kept for layout compatibility, but hidden by CSS -->
+    <!-- Just kept for parity if needed; not shown -->
     <img id="fullImage" src="IMG_4698.png" alt="Puzzle Bild">
   </div>
 
@@ -303,11 +329,11 @@
     <button id="restartButton" onclick="restartGame()">Neu starten</button>
   </div>
 
-  <!-- "Difficulty" now controls error highlighting mode -->
-  <div id="difficultyBar">
-    <button class="diffBtn" data-mode="easy">Easy (Fehler sofort)</button>
-    <button class="diffBtn active" data-mode="medium">Medium</button>
-    <button class="diffBtn" data-mode="hard">Hard (keine Hilfe)</button>
+  <div id="clueBar">
+    <div id="clueInner">
+      <div id="clueLabel">Hinweis</div>
+      <div id="clueText"></div>
+    </div>
   </div>
 
 <script>
@@ -326,7 +352,6 @@ for (let i = 0; i < 20; i++) {
    Crossword Data
 ========================== */
 
-// 13 rows x 15 columns, exactly your crossword grid
 const solutionRows = [
   "AC#SAHARA#J##A#",
   "##DI###ONEPIECE",
@@ -346,32 +371,77 @@ const solutionRows = [
 const ROWS = solutionRows.length;
 const COLS = solutionRows[0].length;
 
+/* Entries (only real answers) */
+
+const entries = [
+  // ACROSS
+  { num: 1, answer: "AC", row: 0, col: 0, dir: "across", clue: "engl. Abk. Klimaanlage" },
+  { num: 2, answer: "SAHARA", row: 0, col: 3, dir: "across", clue: "größte Trockenwüste der Erde" },
+  { num: 3, answer: "ONEPIECE", row: 1, col: 7, dir: "across", clue: "ein Stück (cool)" },
+  { num: 4, answer: "KATZE", row: 2, col: 1, dir: "across", clue: "Wohnungs-Essential" },
+  { num: 5, answer: "TINTE", row: 3, col: 0, dir: "across", clue: "Umbridge hat es Harry zur Strafe weggenommen" },
+  { num: 6, answer: "OCHSE", row: 3, col: 10, dir: "across", clue: "männliches kastriertes Rind" },
+  { num: 7, answer: "ZWIEBLINGER", row: 4, col: 0, dir: "across", clue: "wichtige Zutat für viele Gerichte" },
+  { num: 8, answer: "LASZLO", row: 6, col: 2, dir: "across", clue: "rebellischer Widerstandskämpfer im Film Casablanca" },
+  { num: 9, answer: "ANIME", row: 6, col: 10, dir: "across", clue: "crunchyroll regelt" },
+  { num: 10, answer: "KANAL", row: 7, col: 8, dir: "across", clue: "Pro7" },
+  { num: 11, answer: "INDIANA", row: 8, col: 0, dir: "across", clue: "US-Bundesstaat" },
+  { num: 12, answer: "STAR", row: 8, col: 11, dir: "across", clue: "Taylor Swift" },
+  { num: 13, answer: "NOTARZT", row: 9, col: 0, dir: "across", clue: "wo geht man hin, wenn man früher von der Arbeit weg muss?" },
+  { num: 14, answer: "METEORO", row: 9, col: 8, dir: "across", clue: "Sternschnuppe auf Spanisch (romantisch dies das)" },
+  { num: 15, answer: "EICHHOERNCHEN", row: 11, col: 0, dir: "across", clue: "Uno Revers - In Frankfurt füttert es uns in New York ist es umgekehrt" },
+  { num: 16, answer: "REUTLINGEN", row: 12, col: 0, dir: "across", clue: "wenn du da studierst, bist du cool" },
+
+  // DOWN
+  { num: 17, answer: "FINGER", row: 7, col: 0, dir: "down", clue: "fünf davon hast du an jeder Hand" },
+  { num: 18, answer: "KIWI", row: 2, col: 1, dir: "down", clue: "mag Felice - die Frucht oder den Vogel?" },
+  { num: 19, answer: "ANOMIE", row: 7, col: 1, dir: "down", clue: "Zustand der Normlosigkeit oder des Zusammenbruchs gesellschaftlicher Normen" },
+  { num: 20, answer: "DANIEL", row: 1, col: 2, dir: "down", clue: "ein richtiger Ochse" },
+  { num: 21, answer: "SITTE", row: 0, col: 3, dir: "down", clue: "traditionelle Verhaltensregel" },
+  { num: 22, answer: "ASIA", row: 6, col: 3, dir: "down", clue: "größter Kontinent auf Englisch" },
+  { num: 23, answer: "LIZENZ", row: 4, col: 5, dir: "down", clue: "James Bond hat sie zum töten, ich nur zum Boot fahren" },
+  { num: 24, answer: "ROBEN", row: 0, col: 7, dir: "down", clue: "Amtstracht määßiggg" },
+  { num: 25, answer: "ANLAGE", row: 0, col: 8, dir: "down", clue: "manchmal im Auto, manchmal im Depot und manchmal auch mit Park davor" },
+  { num: 26, answer: "KAMINE", row: 7, col: 8, dir: "down", clue: "gibt es viele in der Winkelgasse - nicht gut wenn du nuschelst" },
+  { num: 27, answer: "JPMORGAN", row: 0, col: 10, dir: "down", clue: "eine Bank" },
+  { num: 28, answer: "GIRLMATH", row: 3, col: 6, dir: "down", clue: "wenn 20 + 4 = 807 ergibt" },
+  { num: 29, answer: "TFH", row: 9, col: 10, dir: "down", clue: "Abk. Technische Fachhochschule" },
+  { num: 30, answer: "NASE", row: 6, col: 11, dir: "down", clue: "Deine ist perfekt" },
+  { num: 31, answer: "ET", row: 11, col: 11, dir: "down", clue: "e in etc." },
+  { num: 32, answer: "ACHSE", row: 0, col: 13, dir: "down", clue: "beim Ballett hast du Pirouetten um deine eigene gemacht" },
+  { num: 33, answer: "EIER", row: 1, col: 14, dir: "down", clue: "mag Felice nicht" },
+  { num: 34, answer: "EUROPA", row: 6, col: 14, dir: "down", clue: "Dame auf der Rückseite der griechischen 2EUR Münze" }
+];
+
 /* ==========================
    Global Variables
 ========================== */
 
-let timerInt = null;
-let startTime = null;
-let moveCount = 0;
-let hasWon = false;
-let errorMode = "medium"; // easy / medium / hard
-
 const puzzleEl = document.getElementById("puzzle");
-const timerEl = document.getElementById("timer");
-const moveEl = document.getElementById("moveCount");
 const winMessage = document.getElementById("winMessage");
 const restartBtn = document.getElementById("restartButton");
+const hintButton = document.getElementById("hintButton");
+const clueBar = document.getElementById("clueBar");
+const clueTextEl = document.getElementById("clueText");
 
 const letterInputs = [];
+let cellMeta = [];
+let activeEntryIndex = null;
+let activeDir = null;
+let lastRow = null;
+let lastCol = null;
+let hintModeActive = false;
+let hasWon = false;
 
-/* ==========================
-   CONFETTI ENGINE
-========================== */
-
+/* Confetti setup */
 const confettiCanvas = document.getElementById("confettiCanvas");
 const ctx = confettiCanvas.getContext("2d");
 let confettiPieces = [];
 let confettiActive = false;
+
+/* ==========================
+   Confetti Engine
+========================== */
 
 function startConfetti() {
   confettiActive = true;
@@ -379,7 +449,6 @@ function startConfetti() {
   resizeCanvas();
   createConfetti();
   requestAnimationFrame(updateConfetti);
-
   setTimeout(() => fadeOutConfetti(), 2000);
 }
 
@@ -405,7 +474,7 @@ window.addEventListener("resize", resizeCanvas);
 
 function createConfetti() {
   const colors = ["#b30000", "#d4af37", "#ffffff", "#008000"];
-
+  confettiPieces = [];
   for (let i = 0; i < 260; i++) {
     confettiPieces.push({
       x: Math.random() * confettiCanvas.width,
@@ -442,40 +511,30 @@ function updateConfetti() {
 }
 
 /* ==========================
-   DIFFICULTY / ERROR MODE
-========================== */
-
-document.querySelectorAll(".diffBtn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".diffBtn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    errorMode = btn.getAttribute("data-mode");
-    applyErrorHighlighting();
-  });
-});
-
-/* ==========================
-   CROSSWORD LOGIC
+   Crossword Setup
 ========================== */
 
 function initCrossword() {
   puzzleEl.innerHTML = "";
   letterInputs.length = 0;
+  cellMeta = Array.from({ length: ROWS }, () =>
+    Array.from({ length: COLS }, () => ({ across: null, down: null, cell: null }))
+  );
+  activeEntryIndex = null;
+  activeDir = null;
+  lastRow = null;
+  lastCol = null;
   hasWon = false;
-
-  moveCount = 0;
-  moveEl.textContent = "0";
-
-  if (timerInt) clearInterval(timerInt);
-  timerInt = null;
-  startTime = null;
-  timerEl.textContent = "0";
+  hintModeActive = false;
+  hintButton.classList.remove("active");
+  clueBar.classList.remove("visible");
 
   winMessage.style.display = "none";
   winMessage.style.opacity = "0";
   restartBtn.style.opacity = "0";
   restartBtn.style.transform = "translateY(8px)";
 
+  // Build grid
   for (let r = 0; r < ROWS; r++) {
     const rowStr = solutionRows[r];
     for (let c = 0; c < COLS; c++) {
@@ -495,61 +554,183 @@ function initCrossword() {
         input.dataset.col = c;
 
         input.addEventListener("input", handleInput);
-        input.addEventListener("focus", e => {
-          e.target.select();
+        input.addEventListener("focus", () => {
+          selectCell(r, c);
+          setTimeout(() => input.select(), 0);
+        });
+        input.addEventListener("click", () => {
+          selectCell(r, c, true);
         });
 
         cell.appendChild(input);
         letterInputs.push(input);
-      }
 
+        cellMeta[r][c].cell = cell;
+      }
       puzzleEl.appendChild(cell);
+    }
+  }
+
+  // Map entries to cells
+  entries.forEach((entry, entryIndex) => {
+    entry.cells = [];
+    const len = entry.answer.length;
+    for (let i = 0; i < len; i++) {
+      const rr = entry.row + (entry.dir === "down" ? i : 0);
+      const cc = entry.col + (entry.dir === "across" ? i : 0);
+      entry.cells.push({ row: rr, col: cc });
+
+      if (!cellMeta[rr][cc]) continue;
+      cellMeta[rr][cc][entry.dir] = { entryIndex, index: i };
+    }
+  });
+}
+
+/* ==========================
+   Selection & Highlighting
+========================== */
+
+function clearHighlights() {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const meta = cellMeta[r][c];
+      if (meta && meta.cell) {
+        meta.cell.classList.remove("active-word", "active-cell");
+      }
     }
   }
 }
 
-function handleInput(e) {
-  const input = e.target;
-
-  // Start timer on first keystroke
-  if (!startTime && !hasWon) {
-    startTime = Date.now();
-    timerInt = setInterval(() => {
-      const seconds = Math.floor((Date.now() - startTime) / 1000);
-      timerEl.textContent = seconds;
-    }, 1000);
+function showClueForEntry(entryIndex) {
+  if (entryIndex == null) {
+    clueBar.classList.remove("visible");
+    clueTextEl.textContent = "";
+    return;
   }
+  const entry = entries[entryIndex];
+  clueTextEl.textContent = entry.clue || "";
+  clueBar.classList.add("visible");
+}
 
-  let val = input.value;
-  if (!val) {
-    input.classList.remove("incorrect");
+function selectCell(row, col, toggleDirection = false) {
+  const meta = cellMeta[row][col];
+  if (!meta || !meta.cell) {
+    activeEntryIndex = null;
+    activeDir = null;
+    clearHighlights();
+    showClueForEntry(null);
     return;
   }
 
-  // Use only first character, uppercase
+  let chosenDir = null;
+  let chosenEntryIndex = null;
+
+  const hasAcross = !!meta.across;
+  const hasDown = !!meta.down;
+
+  if (toggleDirection && lastRow === row && lastCol === col && hasAcross && hasDown) {
+    // Toggle direction
+    if (activeDir === "across" && hasDown) {
+      chosenDir = "down";
+      chosenEntryIndex = meta.down.entryIndex;
+    } else if (activeDir === "down" && hasAcross) {
+      chosenDir = "across";
+      chosenEntryIndex = meta.across.entryIndex;
+    } else if (hasAcross) {
+      chosenDir = "across";
+      chosenEntryIndex = meta.across.entryIndex;
+    } else if (hasDown) {
+      chosenDir = "down";
+      chosenEntryIndex = meta.down.entryIndex;
+    }
+  } else {
+    // First selection or different cell → prefer across, else down
+    if (hasAcross) {
+      chosenDir = "across";
+      chosenEntryIndex = meta.across.entryIndex;
+    } else if (hasDown) {
+      chosenDir = "down";
+      chosenEntryIndex = meta.down.entryIndex;
+    }
+  }
+
+  activeEntryIndex = chosenEntryIndex;
+  activeDir = chosenDir;
+  lastRow = row;
+  lastCol = col;
+
+  clearHighlights();
+
+  if (activeEntryIndex != null) {
+    const entry = entries[activeEntryIndex];
+    entry.cells.forEach(pos => {
+      const cell = cellMeta[pos.row][pos.col].cell;
+      if (cell) {
+        cell.classList.add("active-word");
+      }
+    });
+    const thisCell = cellMeta[row][col].cell;
+    if (thisCell) thisCell.classList.add("active-cell");
+  } else {
+    const thisCell = cellMeta[row][col].cell;
+    if (thisCell) thisCell.classList.add("active-cell");
+  }
+
+  showClueForEntry(activeEntryIndex);
+}
+
+/* ==========================
+   Input / Hint / Movement
+========================== */
+
+function handleInput(e) {
+  const input = e.target;
+  const row = parseInt(input.dataset.row, 10);
+  const col = parseInt(input.dataset.col, 10);
+
+  let val = input.value;
+  if (!val) {
+    if (hintModeActive) applyHintMode();
+    return;
+  }
+
   val = val.charAt(0).toUpperCase();
   input.value = val;
 
-  moveCount++;
-  moveEl.textContent = moveCount;
+  if (hintModeActive) {
+    applyHintMode();
+  }
 
-  if (errorMode === "easy") {
-    const correct = input.dataset.correct;
-    if (val && val !== correct) {
-      input.classList.add("incorrect");
-    } else {
-      input.classList.remove("incorrect");
+  // Auto-advance within active word
+  if (activeEntryIndex != null && activeDir) {
+    const meta = cellMeta[row][col][activeDir];
+    if (meta) {
+      const entry = entries[meta.entryIndex];
+      const nextIndex = meta.index + 1;
+      if (nextIndex < entry.answer.length) {
+        const nextPos = entry.cells[nextIndex];
+        const nextMeta = cellMeta[nextPos.row][nextPos.col];
+        if (nextMeta && nextMeta.cell) {
+          const nextInput = nextMeta.cell.querySelector("input");
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }
+      }
     }
   } else {
-    // medium / hard: no live red coloring
-    input.classList.remove("incorrect");
+    // no active word: go right if possible
+    if (col + 1 < COLS && cellMeta[row][col + 1].cell) {
+      const nextInput = cellMeta[row][col + 1].cell.querySelector("input");
+      if (nextInput) nextInput.focus();
+    }
   }
 
   checkWin();
 }
 
-function applyErrorHighlighting() {
-  if (errorMode !== "easy") {
+function applyHintMode() {
+  if (!hintModeActive) {
     letterInputs.forEach(inp => inp.classList.remove("incorrect"));
     return;
   }
@@ -564,31 +745,42 @@ function applyErrorHighlighting() {
   });
 }
 
+hintButton.addEventListener("click", () => {
+  hintModeActive = !hintModeActive;
+  hintButton.classList.toggle("active", hintModeActive);
+  applyHintMode();
+});
+
+/* ==========================
+   Win Detection
+========================== */
+
 function checkWin() {
   if (hasWon) return;
-  for (const inp of letterInputs) {
-    const val = inp.value.toUpperCase();
-    const correct = inp.dataset.correct;
-    if (!val || val !== correct) {
-      return; // not finished or not correct yet
+
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = solutionRows[r][c];
+      if (ch === "#") continue;
+      const meta = cellMeta[r][c];
+      if (!meta || !meta.cell) return;
+      const inp = meta.cell.querySelector("input");
+      if (!inp) return;
+      const val = inp.value.toUpperCase();
+      if (!val || val !== ch.toUpperCase()) {
+        return;
+      }
     }
   }
+
   onWin();
 }
 
-/* ==========================
-   WIN ANIMATION
-========================== */
-
 function onWin() {
   hasWon = true;
-
-  if (timerInt) clearInterval(timerInt);
-
   if (navigator.vibrate) {
     try { navigator.vibrate(120); } catch (e) {}
   }
-
   startConfetti();
 
   winMessage.style.display = "block";
@@ -602,16 +794,19 @@ function onWin() {
     restartBtn.style.transform = "translateY(0)";
   }, 600);
 
-  // Lock inputs so the solved grid stays as-is
   letterInputs.forEach(inp => inp.readOnly = true);
 }
+
+/* ==========================
+   Restart
+========================== */
 
 function restartGame() {
   initCrossword();
 }
 
 /* ==========================
-   INIT
+   Init
 ========================== */
 
 initCrossword();
