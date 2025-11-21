@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kreuzworträtsel – Weihnachten</title>
+
+  <!-- Festive Calligraphy Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding-top: 20px;
+      background: linear-gradient(#f8f8f8, #d8e3f0);
+      background-image:
+        url('data:image/svg+xml,%3Csvg width="100" height="100" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="10" y="55" font-size="20" fill="%23e0e0e0"%3E✻%3C/text%3E%3C/svg%3E'),
+        url('data:image/svg+xml,%3Csvg width="120" height="120" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="15" y="65" font-size="22" fill="%23f2d4d4"%3E✦%3C/text%3E%3C/svg%3E');
+      background-repeat: repeat;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 3rem;
+      color: #b30000;
+      margin: 0;
+      text-shadow: 0 0 4px rgba(255,255,255,0.7);
+    }
+
+    h2 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2rem;
+      color: #b30000;
+      margin: 0;
+      text-shadow: 0 0 4px rgba(255,255,255,0.7);
+    }
+
+    /* Difficulty bar now used as "Fehler-Anzeige" level */
+    #difficultyBar {
+      position: relative;
+      margin-top: 15px;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      background: rgba(255,255,255,0.9);
+      padding: 8px 12px;
+      border-radius: 14px;
+      gap: 10px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      z-index: 50;
+    }
+
+    @media (max-width: 600px) {
+      #difficultyBar {
+        position: relative;
+        right: 0;
+        top: 10px;
+        transform: none;
+        margin-top: 14px;
+        flex-direction: row;
+        justify-content: center;
+      }
+    }
+
+    .diffBtn {
+      border: none;
+      padding: 6px 14px;
+      border-radius: 10px;
+      background: #e3e3e3;
+      color: #333;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .diffBtn:hover {
+      background: #d0d0d0;
+    }
+
+    .diffBtn.active {
+      background: #b30000;
+      color: white;
+      transform: scale(1.05);
+      box-shadow: 0 0 8px rgba(179,0,0,0.5);
+    }
+
+    /* Snowflakes */
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      color: white;
+      font-size: 20px;
+      opacity: 0.75;
+      animation: fall linear infinite;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    @keyframes fall {
+      to { transform: translateY(110vh); }
+    }
+
+    /* Top info bar */
+    #infoBar {
+      margin-top: 15px;
+      font-size: 17px;
+      display: flex;
+      gap: 20px;
+      align-items: center;
+    }
+
+    .miniLabel {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      padding: 6px 12px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.15);
+      font-size: 16px;
+    }
+    .miniLabel svg {
+      width: 18px;
+      height: 18px;
+      stroke: #b30000;
+      stroke-width: 2;
+    }
+
+    /* Puzzle frame */
+    #frame {
+      padding: 15px;
+      border: 8px solid #b30000;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.65);
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      margin-top: 20px;
+      transition: all 0.8s ease;
+      position: relative;
+    }
+
+    /* Crossword grid */
+    #puzzle {
+      display: grid;
+      grid-template-columns: repeat(15, 32px);
+      grid-auto-rows: 32px;
+      gap: 2px;
+      transition: opacity 0.6s ease;
+      justify-content: center;
+    }
+
+    .cross-cell {
+      width: 32px;
+      height: 32px;
+      box-sizing: border-box;
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .cross-cell.block {
+      background: #333;
+      border: none;
+    }
+
+    .cross-input {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #222;
+    }
+
+    .cross-input.incorrect {
+      color: #b30000;
+    }
+
+    .cross-input:focus {
+      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.4);
+      border-radius: 3px;
+    }
+
+    /* We keep this image element for layout compatibility, but hide it for the crossword */
+    #fullImage {
+      display: none;
+    }
+
+    #winMessage {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.94);
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 17px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.25);
+      opacity: 0;
+      transform: translateY(18px);
+      transition: all 0.8s ease;
+      display: none;
+      text-align: center;
+      max-width: 92vw;
+    }
+
+    #winMessage h2 {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2.3rem;
+      margin: 0;
+      background: linear-gradient(45deg, #b30000, #d4af37, #008000);
+      -webkit-background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 7px rgba(255,255,255,0.7);
+      animation: winPop 0.9s ease-out forwards, glow 2s ease-in-out infinite alternate;
+    }
+
+    @keyframes winPop {
+      0% { transform: scale(0.5) rotate(-6deg); opacity: 0; }
+      60% { transform: scale(1.12) rotate(2deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    @keyframes glow {
+      0% { text-shadow: 0 0 6px rgba(255,255,255,0.6); }
+      100% { text-shadow: 0 0 12px rgba(255,255,255,1); }
+    }
+
+    #restartButton {
+      padding: 10px 18px;
+      border-radius: 999px;
+      background: #b30000;
+      color: white;
+      border: none;
+      font-size: 17px;
+      cursor: pointer;
+      margin-top: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.7s ease, transform 0.7s ease, background 0.2s ease;
+    }
+
+    #restartButton:hover {
+      background: #d00000;
+    }
+
+    @keyframes confettiFadeOut {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Confetti canvas -->
+  <canvas id="confettiCanvas"
+          style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                 pointer-events: none; z-index: 999999; display: none;"></canvas>
+
+  <h1>Felice Adventskalender</h1>
+  <h2>Türchen 1 🎄🎁</h2>
+
+  <div id="infoBar">
+    <div class="miniLabel">
+      <svg viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9"></circle>
+        <line x1="12" y1="12" x2="12" y2="7"></line>
+        <line x1="12" y1="12" x2="15" y2="12"></line>
+      </svg>
+      <span id="timer">0</span>s
+    </div>
+
+    <div class="miniLabel">
+      <svg viewBox="0 0 24 24" fill="none">
+        <polyline points="8 6 2 12 8 18"></polyline>
+        <polyline points="16 6 22 12 16 18"></polyline>
+        <line x1="2" y1="12" x2="22" y2="12"></line>
+      </svg>
+      <span id="moveCount">0</span>
+    </div>
+  </div>
+
+  <div id="frame">
+    <div id="puzzle"></div>
+    <!-- kept for layout compatibility, but hidden by CSS -->
+    <img id="fullImage" src="IMG_4698.png" alt="Puzzle Bild">
+  </div>
+
+  <div id="winMessage">
+    <h2>Geschafft!</h2>
+    <p>Sei gespannt auf das nächste Türchen! 🎄✨</p>
+    <button id="restartButton" onclick="restartGame()">Neu starten</button>
+  </div>
+
+  <!-- "Difficulty" now controls error highlighting mode -->
+  <div id="difficultyBar">
+    <button class="diffBtn" data-mode="easy">Easy (Fehler sofort)</button>
+    <button class="diffBtn active" data-mode="medium">Medium</button>
+    <button class="diffBtn" data-mode="hard">Hard (keine Hilfe)</button>
+  </div>
+
+<script>
+/* Snowflakes */
+for (let i = 0; i < 20; i++) {
+  const f = document.createElement('div');
+  f.className = 'snowflake';
+  f.textContent = '❅';
+  f.style.left = Math.random() * 100 + 'vw';
+  f.style.animationDuration = 5 + Math.random() * 5 + 's';
+  f.style.animationDelay = Math.random() * 5 + 's';
+  document.body.appendChild(f);
+}
+
+/* ==========================
+   Crossword Data
+========================== */
+
+// 13 rows x 15 columns, exactly your crossword grid
+const solutionRows = [
+  "AC#SAHARA#J##A#",
+  "##DI###ONEPIECE",
+  "#KATZE#BL#M##HI",
+  "TINTE#GEA#OCHSE",
+  "ZWIEBLINGER#AER",
+  "#IE##IR#E#G#M##",
+  "##LASZLO##ANIME",
+  "FA#S#EM#KANAL#U",
+  "INDIANA#A##STAR",
+  "NOTARZT#METEORO",
+  "GM####H#I#F#N#P",
+  "EICHHOERNCHEN#A",
+  "REUTLINGEN#T###"
+];
+
+const ROWS = solutionRows.length;
+const COLS = solutionRows[0].length;
+
+/* ==========================
+   Global Variables
+========================== */
+
+let timerInt = null;
+let startTime = null;
+let moveCount = 0;
+let hasWon = false;
+let errorMode = "medium"; // easy / medium / hard
+
+const puzzleEl = document.getElementById("puzzle");
+const timerEl = document.getElementById("timer");
+const moveEl = document.getElementById("moveCount");
+const winMessage = document.getElementById("winMessage");
+const restartBtn = document.getElementById("restartButton");
+
+const letterInputs = [];
+
+/* ==========================
+   CONFETTI ENGINE
+========================== */
+
+const confettiCanvas = document.getElementById("confettiCanvas");
+const ctx = confettiCanvas.getContext("2d");
+let confettiPieces = [];
+let confettiActive = false;
+
+function startConfetti() {
+  confettiActive = true;
+  confettiCanvas.style.display = "block";
+  resizeCanvas();
+  createConfetti();
+  requestAnimationFrame(updateConfetti);
+
+  setTimeout(() => fadeOutConfetti(), 2000);
+}
+
+function fadeOutConfetti() {
+  confettiCanvas.style.animation = "confettiFadeOut 2.5s forwards";
+  setTimeout(() => {
+    stopConfetti();
+    confettiCanvas.style.animation = "";
+  }, 2100);
+}
+
+function stopConfetti() {
+  confettiActive = false;
+  confettiPieces = [];
+  confettiCanvas.style.display = "none";
+}
+
+function resizeCanvas() {
+  confettiCanvas.width = window.innerWidth;
+  confettiCanvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+
+function createConfetti() {
+  const colors = ["#b30000", "#d4af37", "#ffffff", "#008000"];
+
+  for (let i = 0; i < 260; i++) {
+    confettiPieces.push({
+      x: Math.random() * confettiCanvas.width,
+      y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+      size: Math.random() * 7 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      speed: Math.random() * 3 + 1.5,
+      angle: Math.random() * Math.PI * 2,
+      spin: Math.random() * 0.12 - 0.06
+    });
+  }
+}
+
+function updateConfetti() {
+  if (!confettiActive) return;
+
+  ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+  confettiPieces.forEach(p => {
+    p.y += p.speed;
+    p.angle += p.spin;
+
+    ctx.fillStyle = p.color;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+    ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+    ctx.restore();
+  });
+
+  confettiPieces = confettiPieces.filter(p => p.y < confettiCanvas.height);
+
+  requestAnimationFrame(updateConfetti);
+}
+
+/* ==========================
+   DIFFICULTY / ERROR MODE
+========================== */
+
+document.querySelectorAll(".diffBtn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".diffBtn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    errorMode = btn.getAttribute("data-mode");
+    applyErrorHighlighting();
+  });
+});
+
+/* ==========================
+   CROSSWORD LOGIC
+========================== */
+
+function initCrossword() {
+  puzzleEl.innerHTML = "";
+  letterInputs.length = 0;
+  hasWon = false;
+
+  moveCount = 0;
+  moveEl.textContent = "0";
+
+  if (timerInt) clearInterval(timerInt);
+  timerInt = null;
+  startTime = null;
+  timerEl.textContent = "0";
+
+  winMessage.style.display = "none";
+  winMessage.style.opacity = "0";
+  restartBtn.style.opacity = "0";
+  restartBtn.style.transform = "translateY(8px)";
+
+  for (let r = 0; r < ROWS; r++) {
+    const rowStr = solutionRows[r];
+    for (let c = 0; c < COLS; c++) {
+      const ch = rowStr[c];
+      const cell = document.createElement("div");
+      cell.className = "cross-cell";
+
+      if (ch === "#") {
+        cell.classList.add("block");
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.maxLength = 1;
+        input.className = "cross-input";
+        input.dataset.correct = ch.toUpperCase();
+        input.dataset.row = r;
+        input.dataset.col = c;
+
+        input.addEventListener("input", handleInput);
+        input.addEventListener("focus", e => {
+          e.target.select();
+        });
+
+        cell.appendChild(input);
+        letterInputs.push(input);
+      }
+
+      puzzleEl.appendChild(cell);
+    }
+  }
+}
+
+function handleInput(e) {
+  const input = e.target;
+
+  // Start timer on first keystroke
+  if (!startTime && !hasWon) {
+    startTime = Date.now();
+    timerInt = setInterval(() => {
+      const seconds = Math.floor((Date.now() - startTime) / 1000);
+      timerEl.textContent = seconds;
+    }, 1000);
+  }
+
+  let val = input.value;
+  if (!val) {
+    input.classList.remove("incorrect");
+    return;
+  }
+
+  // Use only first character, uppercase
+  val = val.charAt(0).toUpperCase();
+  input.value = val;
+
+  moveCount++;
+  moveEl.textContent = moveCount;
+
+  if (errorMode === "easy") {
+    const correct = input.dataset.correct;
+    if (val && val !== correct) {
+      input.classList.add("incorrect");
+    } else {
+      input.classList.remove("incorrect");
+    }
+  } else {
+    // medium / hard: no live red coloring
+    input.classList.remove("incorrect");
+  }
+
+  checkWin();
+}
+
+function applyErrorHighlighting() {
+  if (errorMode !== "easy") {
+    letterInputs.forEach(inp => inp.classList.remove("incorrect"));
+    return;
+  }
+  letterInputs.forEach(inp => {
+    const val = inp.value.toUpperCase();
+    const correct = inp.dataset.correct;
+    if (val && val !== correct) {
+      inp.classList.add("incorrect");
+    } else {
+      inp.classList.remove("incorrect");
+    }
+  });
+}
+
+function checkWin() {
+  if (hasWon) return;
+  for (const inp of letterInputs) {
+    const val = inp.value.toUpperCase();
+    const correct = inp.dataset.correct;
+    if (!val || val !== correct) {
+      return; // not finished or not correct yet
+    }
+  }
+  onWin();
+}
+
+/* ==========================
+   WIN ANIMATION
+========================== */
+
+function onWin() {
+  hasWon = true;
+
+  if (timerInt) clearInterval(timerInt);
+
+  if (navigator.vibrate) {
+    try { navigator.vibrate(120); } catch (e) {}
+  }
+
+  startConfetti();
+
+  winMessage.style.display = "block";
+  setTimeout(() => {
+    winMessage.style.opacity = "1";
+    winMessage.style.transform = "translateY(0)";
+  }, 50);
+
+  setTimeout(() => {
+    restartBtn.style.opacity = "1";
+    restartBtn.style.transform = "translateY(0)";
+  }, 600);
+
+  // Lock inputs so the solved grid stays as-is
+  letterInputs.forEach(inp => inp.readOnly = true);
+}
+
+function restartGame() {
+  initCrossword();
+}
+
+/* ==========================
+   INIT
+========================== */
+
+initCrossword();
+</script>
+
+</body>
+</html>
