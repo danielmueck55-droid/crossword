@@ -119,7 +119,7 @@
       display: grid;
       grid-template-columns: repeat(15, min(32px, 5vw));
       grid-auto-rows: min(32px, 5vw);
-      gap: 2px;
+      gap: 0; /* cells touch */
       transition: opacity 0.6s ease;
       justify-content: center;
     }
@@ -128,7 +128,7 @@
       width: 100%;
       height: 100%;
       box-sizing: border-box;
-      border-radius: 4px;
+      border-radius: 2px; /* reduced rounding */
       border: 1px solid rgba(0,0,0,0.15);
       background: rgba(255,255,255,0.95);
       display: flex;
@@ -170,35 +170,70 @@
       color: #b30000;
     }
 
-    .cross-input:focus {
-      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.4);
-      border-radius: 3px;
+    .cross-input.no-caret {
+      caret-color: transparent;
     }
 
-    /* hide original image but keep for layout parity if needed */
+    .cross-input:focus {
+      box-shadow: 0 0 0 2px rgba(179, 0, 0, 0.4);
+      border-radius: 2px;
+    }
+
+    /* Number badges on start cells */
+    .cell-number {
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: transparent;
+      border: 1px solid rgba(179,0,0,0.4);
+      font-size: 8px;
+      color: #b30000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    /* original image hidden */
     #fullImage {
+      display: false;
+    }
+
+    /* Win overlay */
+    #winOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
       display: none;
+      z-index: 14000;
     }
 
     #winMessage {
-      margin-top: 18px;
-      background: rgba(255,255,255,0.94);
-      padding: 14px 20px;
-      border-radius: 12px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background: rgba(255,255,255,0.97);
+      padding: 18px 22px 20px;
+      border-radius: 16px;
       font-size: 17px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.25);
+      box-shadow: 0 0 18px rgba(0,0,0,0.4);
       opacity: 0;
-      transform: translateY(18px);
-      transition: all 0.8s ease;
+      transition: opacity 0.8s ease, transform 0.8s ease;
       display: none;
       text-align: center;
       max-width: 92vw;
+      z-index: 15000;
     }
 
     #winMessage h2 {
       font-family: 'Great Vibes', cursive;
       font-size: 2.3rem;
-      margin: 0;
+      margin: 0 0 8px;
       background: linear-gradient(45deg, #b30000, #d4af37, #008000);
       -webkit-background-clip: text;
       color: transparent;
@@ -206,10 +241,37 @@
       animation: winPop 0.9s ease-out forwards, glow 2s ease-in-out infinite alternate;
     }
 
+    #winText {
+      margin-top: 4px;
+      margin-bottom: 8px;
+    }
+
+    #finalPhraseLetters {
+      margin-top: 8px;
+      display: inline-block;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      position: relative;
+    }
+
+    .final-letter {
+      display: inline-block;
+      opacity: 0;
+      transform: translate(0, 30px);
+      animation: letterIn 0.7s forwards;
+    }
+
+    @keyframes letterIn {
+      0%   { opacity: 0; transform: translate(0, 40px) scale(0.8); }
+      60%  { opacity: 1; transform: translate(0, -6px) scale(1.05); }
+      100% { opacity: 1; transform: translate(0, 0) scale(1); }
+    }
+
     @keyframes winPop {
-      0% { transform: scale(0.5) rotate(-6deg); opacity: 0; }
-      60% { transform: scale(1.12) rotate(2deg); opacity: 1; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+      0% { transform: translate(-50%, -50%) scale(0.5) rotate(-6deg); opacity: 0; }
+      60% { transform: translate(-50%, -50%) scale(1.08) rotate(2deg); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
     }
 
     @keyframes glow {
@@ -218,12 +280,12 @@
     }
 
     #restartButton {
-      padding: 10px 18px;
+      padding: 8px 16px;
       border-radius: 999px;
       background: #b30000;
       color: white;
       border: none;
-      font-size: 17px;
+      font-size: 15px;
       cursor: pointer;
       margin-top: 10px;
       opacity: 0;
@@ -235,9 +297,34 @@
       background: #d00000;
     }
 
+    #closeWin {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      cursor: pointer;
+      color: #666;
+    }
+
+    #closeWin:hover {
+      color: #b30000;
+    }
+
     @keyframes confettiFadeOut {
       from { opacity: 1; }
       to   { opacity: 0; }
+    }
+
+    /* Final cells highlight */
+    .final-highlight {
+      animation: finalPulse 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes finalPulse {
+      0% { box-shadow: 0 0 0 0 rgba(212,175,55,0.2); background: #fffbe6; }
+      100% { box-shadow: 0 0 0 4px rgba(212,175,55,0.7); background: #fff6c2; }
     }
 
     /* Bottom sliding clue popup */
@@ -275,10 +362,22 @@
 
     #clueText {
       font-size: 15px;
+      font-weight: 600; /* bold clue text */
     }
 
     #clueBar.visible {
       transform: translateY(0);
+    }
+
+    /* Clue pulse animation when switching words */
+    #clueBar.pulse {
+      animation: cluePulse 0.18s ease-out;
+    }
+
+    @keyframes cluePulse {
+      0%   { transform: translateY(0) scale(0.98); opacity: 0.9; }
+      60%  { transform: translateY(-2px) scale(1.03); opacity: 1; }
+      100% { transform: translateY(0) scale(1); opacity: 1; }
     }
 
     @media (max-width: 600px) {
@@ -320,18 +419,21 @@
   <div id="frame">
     <div id="puzzle"></div>
     <!-- Just kept for parity if needed; not shown -->
-    <img id="fullImage" src="IMG_4698.png" alt="Puzzle Bild">
-  </div>
+    </div>
+
+  <div id="winOverlay"></div>
 
   <div id="winMessage">
+    <button id="closeWin" type="button">✕</button>
     <h2>Geschafft!</h2>
-    <p>Sei gespannt auf das nächste Türchen! 🎄✨</p>
+    <div id="winText">Endlösung:</div>
+    <div id="finalPhraseLetters"></div>
     <button id="restartButton" onclick="restartGame()">Neu starten</button>
   </div>
 
   <div id="clueBar">
     <div id="clueInner">
-      <div id="clueLabel">Hinweis</div>
+      <div id="clueLabel">Frage</div>
       <div id="clueText"></div>
     </div>
   </div>
@@ -371,58 +473,70 @@ const solutionRows = [
 const ROWS = solutionRows.length;
 const COLS = solutionRows[0].length;
 
-/* Entries (only real answers) */
+/* Entries with numbers & clues (real answers only) */
 
 const entries = [
-  // ACROSS
-  { num: 1, answer: "AC", row: 0, col: 0, dir: "across", clue: "engl. Abk. Klimaanlage" },
-  { num: 2, answer: "SAHARA", row: 0, col: 3, dir: "across", clue: "größte Trockenwüste der Erde" },
-  { num: 3, answer: "ONEPIECE", row: 1, col: 7, dir: "across", clue: "ein Stück (cool)" },
-  { num: 4, answer: "KATZE", row: 2, col: 1, dir: "across", clue: "Wohnungs-Essential" },
-  { num: 5, answer: "TINTE", row: 3, col: 0, dir: "across", clue: "Umbridge hat es Harry zur Strafe weggenommen" },
-  { num: 6, answer: "OCHSE", row: 3, col: 10, dir: "across", clue: "männliches kastriertes Rind" },
-  { num: 7, answer: "ZWIEBLINGER", row: 4, col: 0, dir: "across", clue: "wichtige Zutat für viele Gerichte" },
-  { num: 8, answer: "LASZLO", row: 6, col: 2, dir: "across", clue: "rebellischer Widerstandskämpfer im Film Casablanca" },
-  { num: 9, answer: "ANIME", row: 6, col: 10, dir: "across", clue: "crunchyroll regelt" },
-  { num: 10, answer: "KANAL", row: 7, col: 8, dir: "across", clue: "Pro7" },
-  { num: 11, answer: "INDIANA", row: 8, col: 0, dir: "across", clue: "US-Bundesstaat" },
-  { num: 12, answer: "STAR", row: 8, col: 11, dir: "across", clue: "Taylor Swift" },
-  { num: 13, answer: "NOTARZT", row: 9, col: 0, dir: "across", clue: "wo geht man hin, wenn man früher von der Arbeit weg muss?" },
-  { num: 14, answer: "METEORO", row: 9, col: 8, dir: "across", clue: "Sternschnuppe auf Spanisch (romantisch dies das)" },
-  { num: 15, answer: "EICHHOERNCHEN", row: 11, col: 0, dir: "across", clue: "Uno Revers - In Frankfurt füttert es uns in New York ist es umgekehrt" },
-  { num: 16, answer: "REUTLINGEN", row: 12, col: 0, dir: "across", clue: "wenn du da studierst, bist du cool" },
+  // ACROSS (1–15)
+  { num: 1,  answer: "AC",             row: 0, col: 0,  dir: "across", clue: "engl. Abk. Klimaanlage" },
+  { num: 2,  answer: "SAHARA",         row: 0, col: 3,  dir: "across", clue: "größte Trockenwüste der Erde" },
+  { num: 3,  answer: "ONEPIECE",       row: 1, col: 7,  dir: "across", clue: "ein Stück (cool)" },
+  { num: 4,  answer: "KATZE",          row: 2, col: 1,  dir: "across", clue: "Wohnungs-Essential" },
+  { num: 5,  answer: "OCHSE",          row: 3, col: 10, dir: "across", clue: "männliches kastriertes Rind" },
+  { num: 6,  answer: "ZWIEBLINGER",    row: 4, col: 0,  dir: "across", clue: "wichtige Zutat für viele Gerichte" },
+  { num: 7,  answer: "LASZLO",         row: 6, col: 2,  dir: "across", clue: "rebellischer Widerstandskämpfer im Film Casablanca" },
+  { num: 8,  answer: "ANIME",          row: 6, col: 10, dir: "across", clue: "crunchyroll regelt" },
+  { num: 9,  answer: "KANAL",          row: 7, col: 8,  dir: "across", clue: "Pro7" },
+  { num: 10, answer: "INDIANA",        row: 8, col: 0,  dir: "across", clue: "US-Bundesstaat" },
+  { num: 11, answer: "STAR",           row: 8, col: 11, dir: "across", clue: "Taylor Swift" },
+  { num: 12, answer: "NOTARZT",        row: 9, col: 0,  dir: "across", clue: "wo geht man hin, wenn man früher von der Arbeit weg muss?" },
+  { num: 13, answer: "METEORO",        row: 9, col: 8,  dir: "across", clue: "Sternschnuppe auf Spanisch (romantisch dies das)" },
+  { num: 14, answer: "EICHHOERNCHEN",  row: 11,col: 0,  dir: "across", clue: "Uno Revers - In Frankfurt füttert es uns in New York ist es umgekehrt" },
+  { num: 15, answer: "REUTLINGEN",     row: 12,col: 0,  dir: "across", clue: "wenn du da studierst, bist du cool" },
 
-  // DOWN
-  { num: 17, answer: "FINGER", row: 7, col: 0, dir: "down", clue: "fünf davon hast du an jeder Hand" },
-  { num: 18, answer: "KIWI", row: 2, col: 1, dir: "down", clue: "mag Felice - die Frucht oder den Vogel?" },
-  { num: 19, answer: "ANOMIE", row: 7, col: 1, dir: "down", clue: "Zustand der Normlosigkeit oder des Zusammenbruchs gesellschaftlicher Normen" },
-  { num: 20, answer: "DANIEL", row: 1, col: 2, dir: "down", clue: "ein richtiger Ochse" },
-  { num: 21, answer: "SITTE", row: 0, col: 3, dir: "down", clue: "traditionelle Verhaltensregel" },
-  { num: 22, answer: "ASIA", row: 6, col: 3, dir: "down", clue: "größter Kontinent auf Englisch" },
-  { num: 23, answer: "LIZENZ", row: 4, col: 5, dir: "down", clue: "James Bond hat sie zum töten, ich nur zum Boot fahren" },
-  { num: 24, answer: "ROBEN", row: 0, col: 7, dir: "down", clue: "Amtstracht määßiggg" },
-  { num: 25, answer: "ANLAGE", row: 0, col: 8, dir: "down", clue: "manchmal im Auto, manchmal im Depot und manchmal auch mit Park davor" },
-  { num: 26, answer: "KAMINE", row: 7, col: 8, dir: "down", clue: "gibt es viele in der Winkelgasse - nicht gut wenn du nuschelst" },
-  { num: 27, answer: "JPMORGAN", row: 0, col: 10, dir: "down", clue: "eine Bank" },
-  { num: 28, answer: "GIRLMATH", row: 3, col: 6, dir: "down", clue: "wenn 20 + 4 = 807 ergibt" },
-  { num: 29, answer: "TFH", row: 9, col: 10, dir: "down", clue: "Abk. Technische Fachhochschule" },
-  { num: 30, answer: "NASE", row: 6, col: 11, dir: "down", clue: "Deine ist perfekt" },
-  { num: 31, answer: "ET", row: 11, col: 11, dir: "down", clue: "e in etc." },
-  { num: 32, answer: "ACHSE", row: 0, col: 13, dir: "down", clue: "beim Ballett hast du Pirouetten um deine eigene gemacht" },
-  { num: 33, answer: "EIER", row: 1, col: 14, dir: "down", clue: "mag Felice nicht" },
-  { num: 34, answer: "EUROPA", row: 6, col: 14, dir: "down", clue: "Dame auf der Rückseite der griechischen 2EUR Münze" }
+  // DOWN (16–34)
+  { num: 16, answer: "SITTE",     row: 0, col: 3,  dir: "down", clue: "traditionelle Verhaltensregel" },
+  { num: 17, answer: "ROBEN",     row: 0, col: 7,  dir: "down", clue: "Amtstracht määßiggg" },
+  { num: 18, answer: "ANLAGE",    row: 0, col: 8,  dir: "down", clue: "manchmal im Auto, manchmal im Depot und manchmal auch mit Park davor" },
+  { num: 19, answer: "JPMORGAN",  row: 0, col: 10, dir: "down", clue: "eine Bank" },
+  { num: 20, answer: "ACHSE",     row: 0, col: 13, dir: "down", clue: "beim Ballett hast du Pirouetten um deine eigene gemacht" },
+  { num: 21, answer: "DANIEL",    row: 1, col: 2,  dir: "down", clue: "ein richtiger Ochse" },
+  { num: 22, answer: "EIER",      row: 1, col: 14, dir: "down", clue: "mag Felice nicht" },
+  { num: 23, answer: "KIWI",      row: 2, col: 1,  dir: "down", clue: "mag Felice - die Frucht oder den Vogel?" },
+
+  // 24 war in deiner Liste als TINTE (Down), liegt im Gitter aber waagrecht
+  { num: 24, answer: "TINTE",     row: 3, col: 0,  dir: "across", clue: "Umbridge hat es Harry zur Strafe weggenommen" },
+
+  { num: 25, answer: "ANOMIE",    row: 7, col: 1,  dir: "down", clue: "Zustand der Normlosigkeit oder des Zusammenbruchs gesellschaftlicher Normen" },
+  { num: 26, answer: "KAMINE",    row: 7, col: 8,  dir: "down", clue: "gibt es viele in der Winkelgasse - nicht gut wenn du nuschelst" },
+  { num: 27, answer: "GIRLMATH",  row: 3, col: 6,  dir: "down", clue: "wenn 20 + 4 = 807 ergibt" },
+  { num: 28, answer: "ET",        row: 9, col: 9,  dir: "across", clue: "e in etc." },
+  { num: 29, answer: "TFH",       row: 9, col: 10, dir: "down", clue: "Abk. Technische Fachhochschule" },
+  { num: 30, answer: "NASE",      row: 6, col: 11, dir: "down", clue: "Deine ist perfekt" },
+  { num: 31, answer: "EUROPA",    row: 6, col: 14, dir: "down", clue: "Dame auf der Rückseite der griechischen 2EUR Münze" },
+  { num: 32, answer: "ASIA",      row: 6, col: 3,  dir: "down", clue: "größter Kontinent auf Englisch" },
+  { num: 33, answer: "LIZENZ",    row: 4, col: 5,  dir: "down", clue: "James Bond hat sie zum töten, ich nur zum Boot fahren" },
+
+  // Ergänzt: FINGER als eigenständiges Wort
+  { num: 34, answer: "FINGER",    row: 7, col: 0,  dir: "down", clue: "fünf davon hast du an jeder Hand" }
 ];
+
 
 /* ==========================
    Global Variables
 ========================== */
 
 const puzzleEl = document.getElementById("puzzle");
+const winOverlay = document.getElementById("winOverlay");
 const winMessage = document.getElementById("winMessage");
 const restartBtn = document.getElementById("restartButton");
+const closeWinBtn = document.getElementById("closeWin");
 const hintButton = document.getElementById("hintButton");
 const clueBar = document.getElementById("clueBar");
 const clueTextEl = document.getElementById("clueText");
+const clueLabelEl = document.getElementById("clueLabel");
+const finalPhraseLettersEl = document.getElementById("finalPhraseLetters");
+
+const finalPhrase = "Felice hat einen nicen Hintern";
 
 const letterInputs = [];
 let cellMeta = [];
@@ -432,6 +546,8 @@ let lastRow = null;
 let lastCol = null;
 let hintModeActive = false;
 let hasWon = false;
+let lastClueEntryIndex = null;
+let lastKeyWasBackspace = false;
 
 /* Confetti setup */
 const confettiCanvas = document.getElementById("confettiCanvas");
@@ -514,11 +630,13 @@ function updateConfetti() {
    Crossword Setup
 ========================== */
 
+let finalCells = [];
+
 function initCrossword() {
   puzzleEl.innerHTML = "";
   letterInputs.length = 0;
   cellMeta = Array.from({ length: ROWS }, () =>
-    Array.from({ length: COLS }, () => ({ across: null, down: null, cell: null }))
+    Array.from({ length: COLS }, () => ({ across: null, down: null, cell: null, startNums: [] }))
   );
   activeEntryIndex = null;
   activeDir = null;
@@ -528,11 +646,15 @@ function initCrossword() {
   hintModeActive = false;
   hintButton.classList.remove("active");
   clueBar.classList.remove("visible");
+  lastClueEntryIndex = null;
 
+  winOverlay.style.display = "none";
   winMessage.style.display = "none";
   winMessage.style.opacity = "0";
+  winMessage.style.transform = "translate(-50%, -50%) scale(0.9)";
   restartBtn.style.opacity = "0";
   restartBtn.style.transform = "translateY(8px)";
+  finalPhraseLettersEl.innerHTML = "";
 
   // Build grid
   for (let r = 0; r < ROWS; r++) {
@@ -548,18 +670,25 @@ function initCrossword() {
         const input = document.createElement("input");
         input.type = "text";
         input.maxLength = 1;
-        input.className = "cross-input";
+        input.className = "cross-input no-caret";
         input.dataset.correct = ch.toUpperCase();
         input.dataset.row = r;
         input.dataset.col = c;
 
+        input.addEventListener("keydown", (ev) => {
+          lastKeyWasBackspace = (ev.key === "Backspace");
+        });
+
         input.addEventListener("input", handleInput);
         input.addEventListener("focus", () => {
-          selectCell(r, c);
+          selectCell(r, c, false, true); // preserve direction on focus
           setTimeout(() => input.select(), 0);
         });
         input.addEventListener("click", () => {
-          selectCell(r, c, true);
+          selectCell(r, c, true, false); // allow toggling direction on click
+        });
+        input.addEventListener("blur", () => {
+          input.classList.add("no-caret");
         });
 
         cell.appendChild(input);
@@ -571,7 +700,7 @@ function initCrossword() {
     }
   }
 
-  // Map entries to cells
+  // Map entries to cells and mark start cells
   entries.forEach((entry, entryIndex) => {
     entry.cells = [];
     const len = entry.answer.length;
@@ -583,7 +712,36 @@ function initCrossword() {
       if (!cellMeta[rr][cc]) continue;
       cellMeta[rr][cc][entry.dir] = { entryIndex, index: i };
     }
+
+    // Mark start cell with number
+    const startPos = entry.cells[0];
+    const meta = cellMeta[startPos.row][startPos.col];
+    if (meta && meta.cell) {
+      if (!meta.startNums.length || entry.num < Math.min(...meta.startNums)) {
+        meta.startNums.push(entry.num);
+        const oldMarker = meta.cell.querySelector(".cell-number");
+        if (oldMarker) oldMarker.remove();
+        const badge = document.createElement("div");
+        badge.className = "cell-number";
+        badge.textContent = entry.num;
+        meta.cell.appendChild(badge);
+      }
+    }
   });
+
+  computeFinalCells();
+}
+
+function computeFinalCells() {
+  finalCells = [];
+  const targetLetters = finalPhrase.replace(/ /g, "").length;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (solutionRows[r][c] !== "#" && finalCells.length < targetLetters) {
+        finalCells.push({ row: r, col: c });
+      }
+    }
+  }
 }
 
 /* ==========================
@@ -604,15 +762,35 @@ function clearHighlights() {
 function showClueForEntry(entryIndex) {
   if (entryIndex == null) {
     clueBar.classList.remove("visible");
+    clueBar.classList.remove("pulse");
     clueTextEl.textContent = "";
+    clueLabelEl.textContent = "Frage";
+    lastClueEntryIndex = null;
     return;
   }
   const entry = entries[entryIndex];
+
+  // Pulse only when switching to a different entry
+  if (entryIndex !== lastClueEntryIndex) {
+    clueBar.classList.remove("pulse");
+    void clueBar.offsetWidth; // reflow
+    clueBar.classList.add("pulse");
+  }
+
   clueTextEl.textContent = entry.clue || "";
+  clueLabelEl.textContent = "Frage " + entry.num;
   clueBar.classList.add("visible");
+  lastClueEntryIndex = entryIndex;
 }
 
-function selectCell(row, col, toggleDirection = false) {
+/**
+ * selectCell(row, col, toggleDirection=false, preserveDir=false)
+ * Option C behaviour:
+ * - If a new word is selected (different entry index, not just direction toggle on same cell),
+ *   cursor jumps to the start of that word.
+ * - Otherwise caret stays on the current cell.
+ */
+function selectCell(row, col, toggleDirection = false, preserveDir = false) {
   const meta = cellMeta[row][col];
   if (!meta || !meta.cell) {
     activeEntryIndex = null;
@@ -622,13 +800,16 @@ function selectCell(row, col, toggleDirection = false) {
     return;
   }
 
+  const hasAcross = !!meta.across;
+  const hasDown = !!meta.down;
+  const sameCell = (lastRow === row && lastCol === col);
+  const prevEntryIndex = activeEntryIndex;
+
   let chosenDir = null;
   let chosenEntryIndex = null;
 
-  const hasAcross = !!meta.across;
-  const hasDown = !!meta.down;
-
-  if (toggleDirection && lastRow === row && lastCol === col && hasAcross && hasDown) {
+  // Direction logic
+  if (toggleDirection && sameCell && hasAcross && hasDown) {
     // Toggle direction
     if (activeDir === "across" && hasDown) {
       chosenDir = "down";
@@ -643,6 +824,10 @@ function selectCell(row, col, toggleDirection = false) {
       chosenDir = "down";
       chosenEntryIndex = meta.down.entryIndex;
     }
+  } else if (preserveDir && activeDir && meta[activeDir]) {
+    // Keep current direction if possible (auto-advance etc.)
+    chosenDir = activeDir;
+    chosenEntryIndex = meta[activeDir].entryIndex;
   } else {
     // First selection or different cell → prefer across, else down
     if (hasAcross) {
@@ -677,6 +862,35 @@ function selectCell(row, col, toggleDirection = false) {
   }
 
   showClueForEntry(activeEntryIndex);
+
+  // Decide whether to jump to start (Option C)
+  const newWordSelected =
+    activeEntryIndex != null &&
+    activeEntryIndex !== prevEntryIndex &&
+    !(sameCell && toggleDirection); // don't jump when just toggling direction on same cell
+
+  if (activeEntryIndex != null && newWordSelected) {
+    const entry = entries[activeEntryIndex];
+    const firstPos = entry.cells[0];
+    const m2 = cellMeta[firstPos.row][firstPos.col];
+    if (m2 && m2.cell) {
+      const firstInput = m2.cell.querySelector("input");
+      if (firstInput) {
+        firstInput.classList.add("no-caret");
+        firstInput.focus();
+        setTimeout(() => firstInput.select(), 0);
+      }
+    }
+  } else {
+    // Keep caret on current cell but hidden
+    const m = cellMeta[row][col];
+    if (m && m.cell) {
+      const inp = m.cell.querySelector("input");
+      if (inp) {
+        inp.classList.add("no-caret");
+      }
+    }
+  }
 }
 
 /* ==========================
@@ -688,9 +902,34 @@ function handleInput(e) {
   const row = parseInt(input.dataset.row, 10);
   const col = parseInt(input.dataset.col, 10);
 
+  // caret visible while typing
+  input.classList.remove("no-caret");
+
   let val = input.value;
+
+  // Case: deletion / backspace → move backwards in current word
   if (!val) {
+    if (lastKeyWasBackspace && activeEntryIndex != null && activeDir) {
+      const metaDir = cellMeta[row][col][activeDir];
+      if (metaDir) {
+        const entry = entries[metaDir.entryIndex];
+        for (let i = metaDir.index - 1; i >= 0; i--) {
+          const prevPos = entry.cells[i];
+          const prevMeta = cellMeta[prevPos.row][prevPos.col];
+          if (prevMeta && prevMeta.cell) {
+            const prevInput = prevMeta.cell.querySelector("input");
+            if (prevInput) {
+              selectCell(prevPos.row, prevPos.col, false, true);
+              prevInput.classList.add("no-caret");
+              prevInput.focus();
+              break;
+            }
+          }
+        }
+      }
+    }
     if (hintModeActive) applyHintMode();
+    lastKeyWasBackspace = false;
     return;
   }
 
@@ -701,19 +940,21 @@ function handleInput(e) {
     applyHintMode();
   }
 
-  // Auto-advance within active word
+  // Auto-advance within active word (keep direction), skipping already-filled cells
   if (activeEntryIndex != null && activeDir) {
-    const meta = cellMeta[row][col][activeDir];
-    if (meta) {
-      const entry = entries[meta.entryIndex];
-      const nextIndex = meta.index + 1;
-      if (nextIndex < entry.answer.length) {
-        const nextPos = entry.cells[nextIndex];
+    const metaDir = cellMeta[row][col][activeDir];
+    if (metaDir) {
+      const entry = entries[metaDir.entryIndex];
+      for (let i = metaDir.index + 1; i < entry.answer.length; i++) {
+        const nextPos = entry.cells[i];
         const nextMeta = cellMeta[nextPos.row][nextPos.col];
         if (nextMeta && nextMeta.cell) {
           const nextInput = nextMeta.cell.querySelector("input");
-          if (nextInput) {
+          if (nextInput && !nextInput.value) {
+            selectCell(nextPos.row, nextPos.col, false, true);
+            nextInput.classList.add("no-caret");
             nextInput.focus();
+            break;
           }
         }
       }
@@ -722,10 +963,14 @@ function handleInput(e) {
     // no active word: go right if possible
     if (col + 1 < COLS && cellMeta[row][col + 1].cell) {
       const nextInput = cellMeta[row][col + 1].cell.querySelector("input");
-      if (nextInput) nextInput.focus();
+      if (nextInput) {
+        nextInput.classList.add("no-caret");
+        nextInput.focus();
+      }
     }
   }
 
+  lastKeyWasBackspace = false;
   checkWin();
 }
 
@@ -783,10 +1028,32 @@ function onWin() {
   }
   startConfetti();
 
+  // Highlight finalCells
+  finalCells.forEach(pos => {
+    const meta = cellMeta[pos.row][pos.col];
+    if (meta && meta.cell) {
+      meta.cell.classList.add("final-highlight");
+    }
+  });
+
+  // Build animated final phrase letters
+  finalPhraseLettersEl.innerHTML = "";
+  let delay = 0;
+  for (const ch of finalPhrase) {
+    const span = document.createElement("span");
+    span.textContent = ch;
+    span.className = "final-letter";
+    span.style.animationDelay = (delay / 1000) + "s";
+    delay += 50; // stagger letters
+    finalPhraseLettersEl.appendChild(span);
+  }
+
+  // Show overlay + win card
+  winOverlay.style.display = "block";
   winMessage.style.display = "block";
   setTimeout(() => {
     winMessage.style.opacity = "1";
-    winMessage.style.transform = "translateY(0)";
+    winMessage.style.transform = "translate(-50%, -50%) scale(1)";
   }, 50);
 
   setTimeout(() => {
@@ -794,16 +1061,22 @@ function onWin() {
     restartBtn.style.transform = "translateY(0)";
   }, 600);
 
+  // Lock inputs
   letterInputs.forEach(inp => inp.readOnly = true);
 }
 
 /* ==========================
-   Restart
+   Close & Restart
 ========================== */
 
 function restartGame() {
   initCrossword();
 }
+
+closeWinBtn.addEventListener("click", () => {
+  winOverlay.style.display = "none";
+  winMessage.style.display = "none";
+});
 
 /* ==========================
    Init
