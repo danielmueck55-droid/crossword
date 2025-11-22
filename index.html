@@ -22,7 +22,7 @@
         url('data:image/svg+xml,%3Csvg width="120" height="120" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="15" y="65" font-size="22" fill="%23f2d4d4"%3E✦%3C/text%3E%3C/svg%3E');
       background-repeat: repeat;
       overflow-x: hidden;
-      /* space so clue bar doesn't overlap content */
+      /* base space so clue bar doesn't overlap content on desktop */
       padding-bottom: 75px;
     }
 
@@ -105,7 +105,7 @@
       stroke: #ffffff;
     }
 
-    /* Responsive wrapper added so the frame can scale/scroll nicely on mobile */
+    /* Responsive wrapper so the frame can scroll nicely on small screens */
     #frameWrapper {
       width: 100%;
       display: flex;
@@ -124,7 +124,9 @@
       margin-top: 20px;
       transition: all 0.8s ease;
       position: relative;
-      transform-origin: top center; /* so scaling looks natural */
+      transform-origin: top center;
+      /* keep red frame tightly around the puzzle */
+      width: max-content;
     }
 
     /* Crossword grid */
@@ -393,18 +395,41 @@
       100% { transform: translateY(0) scale(1); opacity: 1; }
     }
 
+    /* MOBILE ADJUSTMENTS */
     @media (max-width: 600px) {
+      /* more space because of sticky clue bar & keyboard */
       body {
-        padding-bottom: 90px; /* a bit more room for the clue bar */
+        padding-bottom: 140px;
       }
+
+      /* remove transform scaling (this caused crashes) */
       #frame {
-        max-width: 95vw;
-        transform: scale(0.88); /* scale puzzle slightly on phones */
+        max-width: none;
+        transform: none !important;
       }
+
+      /* make cells smaller instead of scaling the whole thing */
       #puzzle {
-        grid-template-columns: repeat(15, min(8vw, 30px));
-        grid-auto-rows: min(8vw, 30px);
+        grid-template-columns: repeat(15, 7vw);
+        grid-auto-rows: 7vw;
       }
+
+      /* prevent zoom / cut-off letters on mobile */
+      .cross-input {
+        font-size: 17px !important;
+      }
+
+      /* clue bar sticks above keyboard instead of being hidden behind it */
+      #clueBar {
+        position: sticky;
+        bottom: 0;
+      }
+
+      /* ensure red frame may extend off-screen but stays tight to puzzle */
+      #frameWrapper {
+        justify-content: flex-start; /* allow horizontal scrolling */
+      }
+
       #clueText {
         font-size: 14px;
       }
