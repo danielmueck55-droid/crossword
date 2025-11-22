@@ -148,7 +148,7 @@
       box-sizing: border-box;
       border-radius: 2px;
       border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.95); /* white cells */
+      background: rgba(255,255,255,0.95);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -220,11 +220,6 @@
       box-shadow: none;
     }
 
-    /* original image hidden */
-    #fullImage {
-      display: false;
-    }
-
     /* Win overlay */
     #winOverlay {
       position: fixed;
@@ -260,7 +255,8 @@
       -webkit-background-clip: text;
       color: transparent;
       text-shadow: 0 0 7px rgba(255,255,255,0.7);
-      animation: winPop 0.9s ease-out forwards, glow 2s ease-in-out infinite alternate;
+      animation: glow 2s ease-in-out infinite alternate;
+      text-align: center;
     }
 
     #winText {
@@ -277,28 +273,43 @@
       position: relative;
     }
 
+    /* phrase letters start hidden; revealed when overlay reaches them */
     .final-letter {
       display: inline-block;
       opacity: 0;
-      transform: translate(0, 30px);
-      animation: letterIn 0.7s forwards;
     }
 
-    @keyframes letterIn {
-      0%   { opacity: 0; transform: translate(0, 40px) scale(0.8); }
-      60%  { opacity: 1; transform: translate(0, -6px) scale(1.05); }
-      100% { opacity: 1; transform: translate(0, 0) scale(1); }
+    .final-letter-reveal {
+      animation: phraseAssemble 0.6s forwards;
     }
 
-    @keyframes winPop {
-      0% { transform: translate(-50%, -50%) scale(0.5) rotate(-6deg); opacity: 0; }
-      60% { transform: translate(-50%, -50%) scale(1.08) rotate(2deg); opacity: 1; }
-      100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    @keyframes phraseAssemble {
+      0%   { opacity: 0; transform: translateY(25px) scale(0.8); }
+      60%  { opacity: 1; transform: translateY(-6px) scale(1.05); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* floating overlays that fly from grid to phrase in straight line */
+    .fly-overlay {
+      position: fixed;
+      font-weight: 700;
+      color: #222;
+      pointer-events: none;
+      z-index: 20000;
+      transform: translate(-50%, -50%);
+      transition:
+        left 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+        top 0.9s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes glow {
       0% { text-shadow: 0 0 6px rgba(255,255,255,0.6); }
       100% { text-shadow: 0 0 12px rgba(255,255,255,1); }
+    }
+
+    #thanksText {
+      margin-top: 10px;
+      font-size: 14px;
     }
 
     #restartButton {
@@ -309,10 +320,13 @@
       border: none;
       font-size: 15px;
       cursor: pointer;
-      margin-top: 10px;
+      margin-top: 14px;
       opacity: 0;
       transform: translateY(8px);
       transition: opacity 0.7s ease, transform 0.7s ease, background 0.2s ease;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     #restartButton:hover {
@@ -419,7 +433,6 @@
         justify-content: center;
       }
 
-      /* whole frame = exactly full screen width, border included */
       #frame {
         box-sizing: border-box;
         width: 100vw;
@@ -436,8 +449,6 @@
         font-size: calc(var(--cell-size) * 0.6);
       }
 
-      /* On mobile, keep clue bar in normal flow below puzzle.
-         We will scroll it into view via JS so the keyboard never hides it. */
       #clueBar {
         position: static;
         transform: none;
@@ -460,7 +471,7 @@
                  pointer-events: none; z-index: 999999; display: none;"></canvas>
 
   <h1>Felice Adventskalender</h1>
-  <h2>Türchen 1 🎄🎁</h2>
+  <h2>Türchen 6 🎄🎁</h2>
 
   <button id="solveButton" type="button">Solve</button>
 
@@ -488,6 +499,7 @@
     <h2>Geschafft!</h2>
     <div id="winText">Endlösung:</div>
     <div id="finalPhraseLetters"></div>
+    <div id="thanksText">Danke, dass Sie an unserem heutigen Rätsel teilgenommen haben</div>
     <button id="restartButton" onclick="restartGame()">Neu starten</button>
   </div>
 
@@ -576,6 +588,41 @@ const entries = [
 
 
 /* ==========================
+   Final phrase + mapping
+========================== */
+
+const finalPhrase = "Felice hat einen nicen Hintern";
+
+/* mapping (row, col) for each non-space letter, 0-based */
+const finalCellPositions = [
+  { row: 7, col: 0 },  // F
+  { row: 5, col: 2 },  // e
+  { row: 6, col: 2 },  // l
+  { row: 8, col: 3 },  // i
+  { row: 11,col: 9 },  // c
+  { row: 7, col: 5 },  // e
+  { row: 10,col: 6 },  // h
+  { row: 8, col: 6 },  // a
+  { row: 9, col: 6 },  // t
+  { row: 9, col: 9 },  // e
+  { row: 10,col: 8 },  // i
+  { row: 11,col: 8 },  // n
+  { row: 12,col: 9 },  // n
+  { row: 1, col: 11 }, // i
+  { row: 3, col: 11 }, // c
+  { row: 1, col: 12 }, // e
+  { row: 6, col: 11 }, // n
+  { row: 2, col: 13 }, // H
+  { row: 2, col: 14 }, // i
+  { row: 10,col: 12 }, // n
+  { row: 8, col: 12 }, // t
+  { row: 2, col: 5 },  // e
+  { row: 12,col: 0 },  // r
+  { row: 1, col: 8 }   // n
+];
+
+
+/* ==========================
    Global Variables
 ========================== */
 
@@ -589,8 +636,6 @@ const clueBar = document.getElementById("clueBar");
 const clueTextEl = document.getElementById("clueText");
 const clueLabelEl = document.getElementById("clueLabel");
 const finalPhraseLettersEl = document.getElementById("finalPhraseLetters");
-
-const finalPhrase = "Felice hat einen nicen Hintern";
 
 const letterInputs = [];
 let cellMeta = [];
@@ -789,11 +834,17 @@ function initCrossword() {
     }
   });
 
-// ==========================
-// Solve Button
-// ==========================
+  computeFinalCells();
+}
 
-// Pressing the Solve button fills the entire puzzle with all correct letters
+function computeFinalCells() {
+  finalCells = finalCellPositions.slice();
+}
+
+/* ==========================
+   Solve Button
+========================== */
+
 document.getElementById("solveButton").addEventListener("click", () => {
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
@@ -810,26 +861,8 @@ document.getElementById("solveButton").addEventListener("click", () => {
       }
     }
   }
-  
-  // After filling everything, trigger the win animation
   checkWin();
 });
-
-
-  computeFinalCells();
-}
-
-function computeFinalCells() {
-  finalCells = [];
-  const targetLetters = finalPhrase.replace(/ /g, "").length;
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (solutionRows[r][c] !== "#" && finalCells.length < targetLetters) {
-        finalCells.push({ row: r, col: c });
-      }
-    }
-  }
-}
 
 /* ==========================
    Selection & Highlighting
@@ -868,7 +901,6 @@ function showClueForEntry(entryIndex) {
   clueBar.classList.add("visible");
   lastClueEntryIndex = entryIndex;
 
-  // On mobile, ensure clue is visible (scroll if needed)
   if (window.innerWidth <= 600) {
     setTimeout(() => {
       clueBar.scrollIntoView({ block: 'end', behavior: 'smooth' });
@@ -892,7 +924,6 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
   const hasAcross = !!meta.across;
   const hasDown = !!meta.down;
   const sameCell = (lastRow === row && lastCol === col);
-  const prevEntryIndex = activeEntryIndex;
 
   let chosenDir = null;
   let chosenEntryIndex = null;
@@ -1073,13 +1104,19 @@ function checkWin() {
   onWin();
 }
 
+/* ==========================
+   Win Animation
+========================== */
+
 function onWin() {
   hasWon = true;
+
   if (navigator.vibrate) {
     try { navigator.vibrate(120); } catch (e) {}
   }
   startConfetti();
 
+  // Highlight all cells that belong to the final phrase
   finalCells.forEach(pos => {
     const meta = cellMeta[pos.row][pos.col];
     if (meta && meta.cell) {
@@ -1087,29 +1124,116 @@ function onWin() {
     }
   });
 
+  // Build the final phrase with spans, preserving spaces
   finalPhraseLettersEl.innerHTML = "";
-  let delay = 0;
+  const phraseLetterSpans = []; // only non-space letters, in order
   for (const ch of finalPhrase) {
     const span = document.createElement("span");
-    span.textContent = ch;
-    span.className = "final-letter";
-    span.style.animationDelay = (delay / 1000) + "s";
-    delay += 50;
+    if (ch === " ") {
+      span.textContent = "\u00A0";
+    } else {
+      span.textContent = ch;
+      span.className = "final-letter";
+      phraseLetterSpans.push(span);
+    }
     finalPhraseLettersEl.appendChild(span);
   }
 
+  // Show overlay + popup container in layout but keep it invisible for now
   winOverlay.style.display = "block";
   winMessage.style.display = "block";
+  winMessage.style.opacity = "0";
+  winMessage.style.transform = "translate(-50%, -50%) scale(0.9)";
+
+  // Word boundaries in non-space-letter index:
+  // "Felice" (6), "hat"(3), "einen"(5), "nicen"(5), "Hintern"(7) => 0..25
+  const wordBoundaries = [0, 6, 9, 14, 19, 26]; // last is exclusive upper bound
+  const wordStartTimes = [800, 1600, 2400, 3200, 4000]; // ms
+  const moveDuration = 900; // matches CSS transition
+
+  function getWordIndex(letterIndex) {
+    for (let w = 0; w < wordBoundaries.length - 1; w++) {
+      if (letterIndex >= wordBoundaries[w] && letterIndex < wordBoundaries[w + 1]) {
+        return w;
+      }
+    }
+    return wordBoundaries.length - 2;
+  }
+
+  // 4) Create flying overlays for each mapped letter
+  const pairsCount = Math.min(finalCells.length, phraseLetterSpans.length);
+
+  for (let i = 0; i < pairsCount; i++) {
+    const pos = finalCells[i];
+    const meta = cellMeta[pos.row][pos.col];
+    if (!meta || !meta.cell) continue;
+
+    const input = meta.cell.querySelector("input");
+    if (!input) continue;
+
+    const fromRect = input.getBoundingClientRect();
+    const targetSpan = phraseLetterSpans[i];
+    const toRect = targetSpan.getBoundingClientRect();
+
+    const overlay = document.createElement("span");
+    overlay.textContent = input.value || input.dataset.correct || targetSpan.textContent;
+    overlay.className = "fly-overlay";
+
+    const cs = window.getComputedStyle(input);
+    overlay.style.fontSize = cs.fontSize;
+    overlay.style.left = (fromRect.left + fromRect.width / 2) + "px";
+    overlay.style.top = (fromRect.top + fromRect.height / 2) + "px";
+
+    document.body.appendChild(overlay);
+
+    // Hide letter inside the cell while flying
+    input.style.visibility = "hidden";
+
+    // Trigger straight-line movement
+    requestAnimationFrame(() => {
+      overlay.style.left = (toRect.left + toRect.width / 2) + "px";
+      overlay.style.top = (toRect.top + toRect.height / 2) + "px";
+    });
+
+    // Word-based reveal timing
+    const letterIndex = i; // index among non-space letters
+    const wIdx = getWordIndex(letterIndex);
+    const indexInWord = letterIndex - wordBoundaries[wIdx];
+    const revealDelay = wordStartTimes[wIdx] + indexInWord * 80; // ms
+
+    setTimeout(() => {
+      targetSpan.classList.add("final-letter-reveal");
+      overlay.remove();
+    }, revealDelay);
+  }
+
+  // Remaining letters of phrase with no mapped grid cell: fade in at correct word timing
+  for (let j = pairsCount; j < phraseLetterSpans.length; j++) {
+    const span = phraseLetterSpans[j];
+    const letterIndex = j;
+    const wIdx = getWordIndex(letterIndex);
+    const indexInWord = letterIndex - wordBoundaries[wIdx];
+    const revealDelay = wordStartTimes[wIdx] + indexInWord * 80;
+    setTimeout(() => {
+      span.classList.add("final-letter-reveal");
+    }, revealDelay);
+  }
+
+  // Delay popup appearance until the phrase is almost complete
+  const popupDelay = wordStartTimes[3]; // around when "nicen" starts
   setTimeout(() => {
     winMessage.style.opacity = "1";
     winMessage.style.transform = "translate(-50%, -50%) scale(1)";
-  }, 50);
+  }, popupDelay);
 
+  // Fade in restart button after everything
+  const lastWordEnd = wordStartTimes[wordStartTimes.length - 1] + 700;
   setTimeout(() => {
     restartBtn.style.opacity = "1";
     restartBtn.style.transform = "translateY(0)";
-  }, 600);
+  }, lastWordEnd);
 
+  // Lock inputs
   letterInputs.forEach(inp => inp.readOnly = true);
 }
 
