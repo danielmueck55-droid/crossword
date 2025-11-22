@@ -22,6 +22,8 @@
         url('data:image/svg+xml,%3Csvg width="120" height="120" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="15" y="65" font-size="22" fill="%23f2d4d4"%3E✦%3C/text%3E%3C/svg%3E');
       background-repeat: repeat;
       overflow-x: hidden;
+      /* space so clue bar doesn't overlap content */
+      padding-bottom: 75px;
     }
 
     h1 {
@@ -63,6 +65,7 @@
       gap: 12px;
       align-items: center;
       justify-content: center;
+      flex-wrap: wrap; /* makes buttons wrap on small screens */
     }
 
     #hintButton {
@@ -102,6 +105,15 @@
       stroke: #ffffff;
     }
 
+    /* Responsive wrapper added so the frame can scale/scroll nicely on mobile */
+    #frameWrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+      padding: 0 10px;
+    }
+
     /* Puzzle frame */
     #frame {
       padding: 15px;
@@ -112,6 +124,7 @@
       margin-top: 20px;
       transition: all 0.8s ease;
       position: relative;
+      transform-origin: top center; /* so scaling looks natural */
     }
 
     /* Crossword grid */
@@ -381,8 +394,12 @@
     }
 
     @media (max-width: 600px) {
+      body {
+        padding-bottom: 90px; /* a bit more room for the clue bar */
+      }
       #frame {
         max-width: 95vw;
+        transform: scale(0.88); /* scale puzzle slightly on phones */
       }
       #puzzle {
         grid-template-columns: repeat(15, min(8vw, 30px));
@@ -405,6 +422,8 @@
   <h1>Felice Adventskalender</h1>
   <h2>Türchen 1 🎄🎁</h2>
 
+  <button id="solveButton" type="button">Solve</button>
+
   <div id="infoBar">
     <button id="hintButton" type="button">
       <svg viewBox="0 0 24 24" fill="none">
@@ -416,10 +435,13 @@
     </button>
   </div>
 
-  <div id="frame">
-    <div id="puzzle"></div>
-    <!-- Just kept for parity if needed; not shown -->
+  <!-- Responsive wrapper around the frame -->
+  <div id="frameWrapper">
+    <div id="frame">
+      <div id="puzzle"></div>
+      <!-- Just kept for parity if needed; not shown -->
     </div>
+  </div>
 
   <div id="winOverlay"></div>
 
@@ -509,7 +531,7 @@ const entries = [
   { num: 25, answer: "ANOMIE",    row: 7, col: 1,  dir: "down", clue: "Zustand der Normlosigkeit oder des Zusammenbruchs gesellschaftlicher Normen" },
   { num: 26, answer: "KAMINE",    row: 7, col: 8,  dir: "down", clue: "gibt es viele in der Winkelgasse - nicht gut wenn du nuschelst" },
   { num: 27, answer: "GIRLMATH",  row: 3, col: 6,  dir: "down", clue: "wenn 20 + 4 = 807 ergibt" },
-  { num: 28, answer: "ET",        row: 9, col: 9,  dir: "across", clue: "e in etc." },
+  { num: 28, answer: "ET",        row: 11, col: 11,  dir: "down", clue: "e in etc." },
   { num: 29, answer: "TFH",       row: 9, col: 10, dir: "down", clue: "Abk. Technische Fachhochschule" },
   { num: 30, answer: "NASE",      row: 6, col: 11, dir: "down", clue: "Deine ist perfekt" },
   { num: 31, answer: "EUROPA",    row: 6, col: 14, dir: "down", clue: "Dame auf der Rückseite der griechischen 2EUR Münze" },
@@ -517,8 +539,8 @@ const entries = [
   { num: 33, answer: "LIZENZ",    row: 4, col: 5,  dir: "down", clue: "James Bond hat sie zum töten, ich nur zum Boot fahren" },
 
   // Ergänzt: FINGER als eigenständiges Wort
-    { num: 33, answer: "HAMILTON",  row: 3, col: 12, dir: "down", clue: "who does Elizabeth Schuyer feel helpless about?" },
-{ num: 34, answer: "FINGER",    row: 7, col: 0,  dir: "down", clue: "Körperteil an dem normalerweise Haut sein sollte"}
+  { num: 33, answer: "HAMILTON",  row: 3, col: 12, dir: "down", clue: "who does Elizabeth Schuyer feel helpless about?" },
+  { num: 34, answer: "FINGER",    row: 7, col: 0,  dir: "down", clue: "Körperteil an dem normalerweise Haut sein sollte"}
 ];
 
 
