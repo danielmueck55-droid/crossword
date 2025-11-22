@@ -9,6 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 
   <style>
+    :root {
+      --frame-border: 8px;
+      --frame-padding-x: 15px;
+    }
+
     body {
       font-family: system-ui, sans-serif;
       display: flex;
@@ -22,7 +27,7 @@
         url('data:image/svg+xml,%3Csvg width="120" height="120" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="15" y="65" font-size="22" fill="%23f2d4d4"%3E✦%3C/text%3E%3C/svg%3E');
       background-repeat: repeat;
       overflow-x: hidden;
-      padding-bottom: 75px; /* base room so clue bar doesn't overlap content on desktop */
+      padding-bottom: 75px; /* room for clue bar on desktop */
     }
 
     h1 {
@@ -104,19 +109,18 @@
       stroke: #ffffff;
     }
 
-    /* Wrapper so we can center / scroll horizontally if ever needed */
+    /* Wrapper so we can nudge frame on mobile */
     #frameWrapper {
       width: 100%;
       display: flex;
       justify-content: center;
-      overflow-x: hidden;
       padding: 0 10px;
     }
 
-    /* Puzzle frame – OPTION A: frame not scaled, just wraps puzzle */
+    /* Puzzle frame (desktop baseline) */
     #frame {
       padding: 15px;
-      border: 8px solid #b30000;
+      border: var(--frame-border) solid #b30000;
       border-radius: 20px;
       background: rgba(255,255,255,0.65);
       box-shadow: 0 0 15px rgba(0,0,0,0.2);
@@ -124,10 +128,11 @@
       transition: all 0.8s ease;
       position: relative;
       transform-origin: top center;
-      width: max-content; /* keep border hugging the puzzle */
+      width: max-content; /* border hugs puzzle on desktop */
+      box-sizing: border-box;
     }
 
-    /* Crossword grid */
+    /* Crossword grid (desktop sizing) */
     #puzzle {
       display: grid;
       grid-template-columns: repeat(15, min(32px, 5vw));
@@ -143,7 +148,7 @@
       box-sizing: border-box;
       border-radius: 2px;
       border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.95); /* white cells as you wanted */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -171,13 +176,16 @@
       height: 100%;
       border: none;
       outline: none;
-      background: transparent;
+      background: transparent; /* no inner box covering letters */
       text-align: center;
       font-size: 18px;
       font-weight: 600;
       text-transform: uppercase;
       color: #222;
-      line-height: 1; /* help avoid visual cropping */
+      line-height: 1;
+      padding: 0;
+      margin: 0;
+      display: block;
     }
 
     .cross-input.incorrect {
@@ -341,14 +349,14 @@
       100% { box-shadow: 0 0 0 4px rgba(212,175,55,0.7); background: #fff6c2; }
     }
 
-    /* Bottom clue popup (desktop baseline) */
+    /* Bottom sliding clue popup (desktop default) */
     #clueBar {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
       transform: translateY(100%);
-      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease, bottom 0.2s ease;
+      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
       background: rgba(255,255,255,0.96);
       box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
       padding: 10px 16px 14px;
@@ -383,7 +391,7 @@
       transform: translateY(0);
     }
 
-    /* Clue pulse animation when switching words */
+    /* Pulse when switching words */
     #clueBar.pulse {
       animation: cluePulse 0.18s ease-out;
     }
@@ -394,38 +402,59 @@
       100% { transform: translateY(0) scale(1); opacity: 1; }
     }
 
-    /* When the on-screen keyboard is open, we push the clue bar up
-       so it sits above the keyboard and overlaps the puzzle if needed */
-    body.keyboard-open #clueBar {
-      bottom: 40vh; /* tune if needed */
-    }
-
-    /* MOBILE ADJUSTMENTS */
+    /* --- MOBILE BEHAVIOR --- */
     @media (max-width: 600px) {
+      :root {
+        --frame-border: 8px;
+        --frame-padding-x: 10px;
+        /* Cell size based on full viewport width (frame border is pushed off-screen) */
+        --cell-size: calc((100vw - 2 * var(--frame-padding-x)) / 15);
+      }
+
       body {
-        padding-bottom: 140px; /* extra room because of keyboard movement */
-      }
-
-      /* don't transform the frame, just the grid size */
-      #frame {
-        max-width: 100%;
-        transform: none !important;
-      }
-
-      /* OPTION A: scale grid cells so puzzle ~fits screen width */
-      #puzzle {
-        grid-template-columns: repeat(15, min(6vw, 24px));
-        grid-auto-rows: min(6vw, 24px);
-      }
-
-      /* larger, responsive font so it's crisp and not cropped */
-      .cross-input {
-        font-size: clamp(14px, 4.5vw, 18px) !important;
+        padding-bottom: 120px; /* extra room for clue on small screens */
       }
 
       #frameWrapper {
+        padding: 0;
         justify-content: center;
-        overflow-x: hidden;
+      }
+
+      /* Make frame slightly wider than viewport & shift left:
+         red border sits just off-screen left/right */
+      #frame {
+        box-sizing: border-box;
+        width: calc(100vw + 2 * var(--frame-border));
+        margin-left: calc(-1 * var(--frame-border));
+        border-width: var(--frame-border);
+        padding: 15px var(--frame-padding-x);
+      }
+
+      #puzzle {
+        grid-template-columns: repeat(15, var(--cell-size));
+        grid-auto-rows: var(--cell-size);
+      }
+
+      .cross-input {
+        font-size: calc(var(--cell-size) * 0.6);
+      }
+
+      /* MOBILE CLUE BAR:
+         default = below content (no overlay),
+         overlay only when body.overlay-clue is set (JS) */
+      #clueBar {
+        position: static;
+        transform: none;
+        box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
+        margin-top: 10px;
+      }
+
+      body.overlay-clue #clueBar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin-top: 0;
       }
 
       #clueText {
@@ -718,22 +747,14 @@ function initCrossword() {
 
         input.addEventListener("input", handleInput);
         input.addEventListener("focus", () => {
-          selectCell(r, c, false, true); // preserve direction on focus
-          document.body.classList.add('keyboard-open');
+          selectCell(r, c, false, true);
           setTimeout(() => input.select(), 0);
         });
         input.addEventListener("click", () => {
-          selectCell(r, c, true, false); // allow toggling direction on click
+          selectCell(r, c, true, false);
         });
         input.addEventListener("blur", () => {
           input.classList.add("no-caret");
-          // small delay so focus can move to another input without flicker
-          setTimeout(() => {
-            const ae = document.activeElement;
-            if (!ae || !ae.classList || !ae.classList.contains('cross-input')) {
-              document.body.classList.remove('keyboard-open');
-            }
-          }, 100);
         });
 
         cell.appendChild(input);
@@ -804,6 +825,34 @@ function clearHighlights() {
   }
 }
 
+function handleCluePosition(entryIndex) {
+  // Desktop: keep old behavior, no overlay logic
+  if (window.innerWidth > 600 || entryIndex == null) {
+    document.body.classList.remove("overlay-clue");
+    return;
+  }
+
+  // On mobile, decide whether to overlay or keep below puzzle
+  if (lastRow == null || lastCol == null) return;
+  const meta = cellMeta[lastRow][lastCol];
+  if (!meta || !meta.cell) return;
+
+  const rect = meta.cell.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const topThreshold = viewportHeight * 0.3;
+
+  // Default: no overlay, puzzle + clue move together
+  document.body.classList.remove("overlay-clue");
+
+  if (rect.top < topThreshold) {
+    // Selected word is high on screen -> overlay clue bar on puzzle bottom
+    document.body.classList.add("overlay-clue");
+  } else {
+    // Ensure clue stays visible with puzzle (no overlay)
+    clueBar.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  }
+}
+
 function showClueForEntry(entryIndex) {
   if (entryIndex == null) {
     clueBar.classList.remove("visible");
@@ -811,14 +860,14 @@ function showClueForEntry(entryIndex) {
     clueTextEl.textContent = "";
     clueLabelEl.textContent = "Frage";
     lastClueEntryIndex = null;
+    document.body.classList.remove("overlay-clue");
     return;
   }
   const entry = entries[entryIndex];
 
-  // Pulse only when switching to a different entry
   if (entryIndex !== lastClueEntryIndex) {
     clueBar.classList.remove("pulse");
-    void clueBar.offsetWidth; // reflow
+    void clueBar.offsetWidth;
     clueBar.classList.add("pulse");
   }
 
@@ -826,6 +875,8 @@ function showClueForEntry(entryIndex) {
   clueLabelEl.textContent = "Frage " + entry.num;
   clueBar.classList.add("visible");
   lastClueEntryIndex = entryIndex;
+
+  handleCluePosition(entryIndex);
 }
 
 /**
@@ -899,33 +950,6 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
   }
 
   showClueForEntry(activeEntryIndex);
-
-  const newWordSelected =
-    activeEntryIndex != null &&
-    activeEntryIndex !== prevEntryIndex &&
-    !(sameCell && toggleDirection);
-
-  if (activeEntryIndex != null && newWordSelected) {
-    const entry = entries[activeEntryIndex];
-    const firstPos = entry.cells[0];
-    const m2 = cellMeta[firstPos.row][firstPos.col];
-    if (m2 && m2.cell) {
-      const firstInput = m2.cell.querySelector("input");
-      if (firstInput) {
-        firstInput.classList.add("no-caret");
-        firstInput.focus();
-        setTimeout(() => firstInput.select(), 0);
-      }
-    }
-  } else {
-    const m = cellMeta[row][col];
-    if (m && m.cell) {
-      const inp = m.cell.querySelector("input");
-      if (inp) {
-        inp.classList.add("no-caret");
-      }
-    }
-  }
 }
 
 /* ==========================
