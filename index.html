@@ -109,7 +109,7 @@
       stroke: #ffffff;
     }
 
-    /* Wrapper so we can nudge frame on mobile */
+    /* Wrapper for frame */
     #frameWrapper {
       width: 100%;
       display: flex;
@@ -128,7 +128,7 @@
       transition: all 0.8s ease;
       position: relative;
       transform-origin: top center;
-      width: max-content; /* border hugs puzzle on desktop */
+      width: max-content;
       box-sizing: border-box;
     }
 
@@ -148,7 +148,7 @@
       box-sizing: border-box;
       border-radius: 2px;
       border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.95); /* white cells as you wanted */
+      background: rgba(255,255,255,0.95); /* white cells */
       display: flex;
       align-items: center;
       justify-content: center;
@@ -176,7 +176,7 @@
       height: 100%;
       border: none;
       outline: none;
-      background: transparent; /* no inner box covering letters */
+      background: transparent;
       text-align: center;
       font-size: 18px;
       font-weight: 600;
@@ -349,7 +349,7 @@
       100% { box-shadow: 0 0 0 4px rgba(212,175,55,0.7); background: #fff6c2; }
     }
 
-    /* Bottom sliding clue popup (desktop default) */
+    /* Bottom sliding clue popup (desktop) */
     #clueBar {
       position: fixed;
       left: 0;
@@ -391,7 +391,6 @@
       transform: translateY(0);
     }
 
-    /* Pulse when switching words */
     #clueBar.pulse {
       animation: cluePulse 0.18s ease-out;
     }
@@ -407,12 +406,12 @@
       :root {
         --frame-border: 8px;
         --frame-padding-x: 10px;
-        /* Cell size based on full viewport width (frame border is pushed off-screen) */
-        --cell-size: calc((100vw - 2 * var(--frame-padding-x)) / 15);
+        /* cell-size so puzzle+frame exactly fit screen width */
+        --cell-size: calc((100vw - 2 * var(--frame-padding-x) - 2 * var(--frame-border)) / 15);
       }
 
       body {
-        padding-bottom: 120px; /* extra room for clue on small screens */
+        padding-bottom: 120px; /* extra room for scrolling */
       }
 
       #frameWrapper {
@@ -420,12 +419,10 @@
         justify-content: center;
       }
 
-      /* Make frame slightly wider than viewport & shift left:
-         red border sits just off-screen left/right */
+      /* whole frame = exactly full screen width, border included */
       #frame {
         box-sizing: border-box;
-        width: calc(100vw + 2 * var(--frame-border));
-        margin-left: calc(-1 * var(--frame-border));
+        width: 100vw;
         border-width: var(--frame-border);
         padding: 15px var(--frame-padding-x);
       }
@@ -439,22 +436,13 @@
         font-size: calc(var(--cell-size) * 0.6);
       }
 
-      /* MOBILE CLUE BAR:
-         default = below content (no overlay),
-         overlay only when body.overlay-clue is set (JS) */
+      /* On mobile, keep clue bar in normal flow below puzzle.
+         We will scroll it into view via JS so the keyboard never hides it. */
       #clueBar {
         position: static;
         transform: none;
         box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
         margin-top: 10px;
-      }
-
-      body.overlay-clue #clueBar {
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        margin-top: 0;
       }
 
       #clueText {
@@ -749,6 +737,13 @@ function initCrossword() {
         input.addEventListener("focus", () => {
           selectCell(r, c, false, true);
           setTimeout(() => input.select(), 0);
+
+          // On mobile: make sure clue is scrolled into view above keyboard
+          if (window.innerWidth <= 600) {
+            setTimeout(() => {
+              clueBar.scrollIntoView({ block: 'end', behavior: 'smooth' });
+            }, 50);
+          }
         });
         input.addEventListener("click", () => {
           selectCell(r, c, true, false);
@@ -779,7 +774,6 @@ function initCrossword() {
       cellMeta[rr][cc][entry.dir] = { entryIndex, index: i };
     }
 
-    // Mark start cell with number
     const startPos = entry.cells[0];
     const meta = cellMeta[startPos.row][startPos.col];
     if (meta && meta.cell) {
@@ -825,34 +819,6 @@ function clearHighlights() {
   }
 }
 
-function handleCluePosition(entryIndex) {
-  // Desktop: keep old behavior, no overlay logic
-  if (window.innerWidth > 600 || entryIndex == null) {
-    document.body.classList.remove("overlay-clue");
-    return;
-  }
-
-  // On mobile, decide whether to overlay or keep below puzzle
-  if (lastRow == null || lastCol == null) return;
-  const meta = cellMeta[lastRow][lastCol];
-  if (!meta || !meta.cell) return;
-
-  const rect = meta.cell.getBoundingClientRect();
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-  const topThreshold = viewportHeight * 0.3;
-
-  // Default: no overlay, puzzle + clue move together
-  document.body.classList.remove("overlay-clue");
-
-  if (rect.top < topThreshold) {
-    // Selected word is high on screen -> overlay clue bar on puzzle bottom
-    document.body.classList.add("overlay-clue");
-  } else {
-    // Ensure clue stays visible with puzzle (no overlay)
-    clueBar.scrollIntoView({ block: 'end', behavior: 'smooth' });
-  }
-}
-
 function showClueForEntry(entryIndex) {
   if (entryIndex == null) {
     clueBar.classList.remove("visible");
@@ -860,7 +826,6 @@ function showClueForEntry(entryIndex) {
     clueTextEl.textContent = "";
     clueLabelEl.textContent = "Frage";
     lastClueEntryIndex = null;
-    document.body.classList.remove("overlay-clue");
     return;
   }
   const entry = entries[entryIndex];
@@ -876,7 +841,12 @@ function showClueForEntry(entryIndex) {
   clueBar.classList.add("visible");
   lastClueEntryIndex = entryIndex;
 
-  handleCluePosition(entryIndex);
+  // On mobile, ensure clue is visible (scroll if needed)
+  if (window.innerWidth <= 600) {
+    setTimeout(() => {
+      clueBar.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    }, 50);
+  }
 }
 
 /**
