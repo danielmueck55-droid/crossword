@@ -289,7 +289,7 @@
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    /* floating overlays that fly from grid to phrase in straight line */
+    /* floating overlays that fly from grid to phrase in straight line, with glow */
     .fly-overlay {
       position: fixed;
       font-weight: 700;
@@ -298,8 +298,30 @@
       z-index: 20000;
       transform: translate(-50%, -50%);
       transition:
-        left 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-        top 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        left 0.9s cubic-bezier(0.20, 0.9, 0.25, 1),
+        top 0.9s cubic-bezier(0.20, 0.9, 0.25, 1),
+        opacity 0.3s ease;
+      filter:
+        drop-shadow(0 0 6px rgba(255,255,255,0.9))
+        drop-shadow(0 0 12px rgba(255,255,255,0.5));
+    }
+
+    /* small sparkles for the glow trail */
+    .fly-sparkle {
+      position: fixed;
+      width: 6px;
+      height: 6px;
+      background: radial-gradient(circle, white, rgba(255,255,255,0));
+      border-radius: 50%;
+      pointer-events: none;
+      opacity: 0.8;
+      z-index: 19000;
+      animation: sparkleFade 0.5s linear forwards;
+    }
+
+    @keyframes sparkleFade {
+      from { transform: scale(1); opacity: 1; }
+      to   { transform: scale(0.3); opacity: 0; }
     }
 
     @keyframes glow {
@@ -415,6 +437,31 @@
       100% { transform: translateY(0) scale(1); opacity: 1; }
     }
 
+    /* Semi-transparent phrase backdrop in center */
+    #phraseBackdrop {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.85);
+      border-radius: 16px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.15);
+      opacity: 0;
+      display: none;
+      transition: opacity 0.8s ease;
+      z-index: 14500; /* above overlay, below popup */
+      text-align: center;
+      max-width: 90vw;
+    }
+
+    /* Phrase inside popup */
+    #finalPhraseInPopup {
+      margin-top: 4px;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
     /* --- MOBILE BEHAVIOR --- */
     @media (max-width: 600px) {
       :root {
@@ -494,11 +541,17 @@
 
   <div id="winOverlay"></div>
 
+  <!-- Center phrase overlay (appears during flights) -->
+  <div id="phraseBackdrop">
+    <div id="finalPhraseLetters"></div>
+  </div>
+
+  <!-- Final popup (appears after phrase assembled) -->
   <div id="winMessage">
     <button id="closeWin" type="button">✕</button>
     <h2>Geschafft!</h2>
     <div id="winText">Endlösung:</div>
-    <div id="finalPhraseLetters"></div>
+    <div id="finalPhraseInPopup"></div>
     <div id="thanksText">Danke, dass Sie an unserem heutigen Rätsel teilgenommen haben</div>
     <button id="restartButton" onclick="restartGame()">Neu starten</button>
   </div>
@@ -754,6 +807,12 @@ function initCrossword() {
   restartBtn.style.opacity = "0";
   restartBtn.style.transform = "translateY(8px)";
   finalPhraseLettersEl.innerHTML = "";
+
+  const phraseBackdrop = document.getElementById("phraseBackdrop");
+  if (phraseBackdrop) {
+    phraseBackdrop.style.display = "none";
+    phraseBackdrop.style.opacity = "0";
+  }
 
   // Build grid
   for (let r = 0; r < ROWS; r++) {
@@ -1105,7 +1164,7 @@ function checkWin() {
 }
 
 /* ==========================
-   Win Animation
+   Win Animation (sequential)
 ========================== */
 
 function onWin() {
@@ -1114,19 +1173,17 @@ function onWin() {
   if (navigator.vibrate) {
     try { navigator.vibrate(120); } catch (e) {}
   }
+
+  // Confetti starts at the same time as highlighting
   startConfetti();
 
-  // Highlight all cells that belong to the final phrase
-  finalCells.forEach(pos => {
-    const meta = cellMeta[pos.row][pos.col];
-    if (meta && meta.cell) {
-      meta.cell.classList.add("final-highlight");
-    }
-  });
+  // Dark overlay appears immediately
+  winOverlay.style.display = "block";
 
-  // Build the final phrase with spans, preserving spaces
+  // Build the final phrase letters (hidden spans for the center overlay)
   finalPhraseLettersEl.innerHTML = "";
   const phraseLetterSpans = []; // only non-space letters, in order
+
   for (const ch of finalPhrase) {
     const span = document.createElement("span");
     if (ch === " ") {
@@ -1139,28 +1196,51 @@ function onWin() {
     finalPhraseLettersEl.appendChild(span);
   }
 
-  // Show overlay + popup container in layout but keep it invisible for now
-  winOverlay.style.display = "block";
-  winMessage.style.display = "block";
-  winMessage.style.opacity = "0";
-  winMessage.style.transform = "translate(-50%, -50%) scale(0.9)";
-
-  // Word boundaries in non-space-letter index:
-  // "Felice" (6), "hat"(3), "einen"(5), "nicen"(5), "Hintern"(7) => 0..25
-  const wordBoundaries = [0, 6, 9, 14, 19, 26]; // last is exclusive upper bound
-  const wordStartTimes = [800, 1600, 2400, 3200, 4000]; // ms
-  const moveDuration = 900; // matches CSS transition
-
-  function getWordIndex(letterIndex) {
-    for (let w = 0; w < wordBoundaries.length - 1; w++) {
-      if (letterIndex >= wordBoundaries[w] && letterIndex < wordBoundaries[w + 1]) {
-        return w;
-      }
-    }
-    return wordBoundaries.length - 2;
+  // Also show phrase text in the final popup
+  const popupPhraseEl = document.getElementById("finalPhraseInPopup");
+  if (popupPhraseEl) {
+    popupPhraseEl.textContent = finalPhrase;
   }
 
-  // 4) Create flying overlays for each mapped letter
+  // 1) Sequentially light up final phrase cells
+  const highlightDelayPerCell = 120; // ms
+  finalCells.forEach((pos, index) => {
+    setTimeout(() => {
+      const meta = cellMeta[pos.row][pos.col];
+      if (meta && meta.cell) {
+        meta.cell.classList.add("final-highlight");
+      }
+    }, index * highlightDelayPerCell);
+  });
+
+  const totalHighlightTime =
+    (finalCells.length > 0 ? (finalCells.length - 1) * highlightDelayPerCell : 0);
+
+  // 2) After highlights are done, wait a bit, then start letter flights + backdrop
+  const pauseAfterHighlight = 600; // ms
+
+  setTimeout(() => {
+    startLetterFlight(phraseLetterSpans);
+  }, totalHighlightTime + pauseAfterHighlight);
+
+  // Lock inputs immediately on win
+  letterInputs.forEach(inp => inp.readOnly = true);
+}
+
+function startLetterFlight(phraseLetterSpans) {
+  const phraseBackdrop = document.getElementById("phraseBackdrop");
+  if (phraseBackdrop) {
+    phraseBackdrop.style.display = "block";
+    phraseBackdrop.style.opacity = "0";
+    // Force reflow
+    void phraseBackdrop.offsetWidth;
+    phraseBackdrop.style.opacity = "1";
+  }
+
+  const stepDelay = 200;     // delay between each letter's start (ms)
+  const moveDuration = 900;  // must match CSS transition
+  const baseStartDelay = 200; // small delay before first letter moves
+
   const pairsCount = Math.min(finalCells.length, phraseLetterSpans.length);
 
   for (let i = 0; i < pairsCount; i++) {
@@ -1173,14 +1253,13 @@ function onWin() {
 
     const fromRect = input.getBoundingClientRect();
     const targetSpan = phraseLetterSpans[i];
+
     const toRect = targetSpan.getBoundingClientRect();
 
     const overlay = document.createElement("span");
-    overlay.textContent = input.value || input.dataset.correct || targetSpan.textContent;
     overlay.className = "fly-overlay";
-
-    const cs = window.getComputedStyle(input);
-    overlay.style.fontSize = cs.fontSize;
+    overlay.textContent = input.value || input.dataset.correct || targetSpan.textContent;
+    overlay.style.fontSize = window.getComputedStyle(input).fontSize;
     overlay.style.left = (fromRect.left + fromRect.width / 2) + "px";
     overlay.style.top = (fromRect.top + fromRect.height / 2) + "px";
 
@@ -1189,52 +1268,57 @@ function onWin() {
     // Hide letter inside the cell while flying
     input.style.visibility = "hidden";
 
-    // Trigger straight-line movement
-    requestAnimationFrame(() => {
+    // Sparkle trail spawner
+    function spawnSparkle() {
+      const s = document.createElement("div");
+      s.className = "fly-sparkle";
+      s.style.left = overlay.style.left;
+      s.style.top = overlay.style.top;
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 500);
+    }
+
+    // Sequenced movement for each letter
+    setTimeout(() => {
+      const sparkleInterval = setInterval(spawnSparkle, 50);
+
       overlay.style.left = (toRect.left + toRect.width / 2) + "px";
       overlay.style.top = (toRect.top + toRect.height / 2) + "px";
-    });
 
-    // Word-based reveal timing
-    const letterIndex = i; // index among non-space letters
-    const wIdx = getWordIndex(letterIndex);
-    const indexInWord = letterIndex - wordBoundaries[wIdx];
-    const revealDelay = wordStartTimes[wIdx] + indexInWord * 80; // ms
-
-    setTimeout(() => {
-      targetSpan.classList.add("final-letter-reveal");
-      overlay.remove();
-    }, revealDelay);
+      setTimeout(() => {
+        clearInterval(sparkleInterval);
+        overlay.style.opacity = "0";
+        targetSpan.classList.add("final-letter-reveal");
+        setTimeout(() => overlay.remove(), 300);
+      }, moveDuration);
+    }, baseStartDelay + i * stepDelay);
   }
 
-  // Remaining letters of phrase with no mapped grid cell: fade in at correct word timing
+  // For any remaining letters (no mapped cell), just reveal in place
   for (let j = pairsCount; j < phraseLetterSpans.length; j++) {
     const span = phraseLetterSpans[j];
-    const letterIndex = j;
-    const wIdx = getWordIndex(letterIndex);
-    const indexInWord = letterIndex - wordBoundaries[wIdx];
-    const revealDelay = wordStartTimes[wIdx] + indexInWord * 80;
     setTimeout(() => {
       span.classList.add("final-letter-reveal");
-    }, revealDelay);
+    }, baseStartDelay + j * stepDelay);
   }
 
-  // Delay popup appearance until the phrase is almost complete
-  const popupDelay = wordStartTimes[3]; // around when "nicen" starts
+  // Show the final popup once letters are basically done flying
+  const totalFlightTime =
+    baseStartDelay +
+    (pairsCount > 0 ? (pairsCount - 1) * stepDelay : 0) +
+    moveDuration;
+
   setTimeout(() => {
+    winMessage.style.display = "block";
     winMessage.style.opacity = "1";
     winMessage.style.transform = "translate(-50%, -50%) scale(1)";
-  }, popupDelay);
+  }, totalFlightTime + 400);
 
-  // Fade in restart button after everything
-  const lastWordEnd = wordStartTimes[wordStartTimes.length - 1] + 700;
+  // Fade in restart button a bit later
   setTimeout(() => {
     restartBtn.style.opacity = "1";
     restartBtn.style.transform = "translateY(0)";
-  }, lastWordEnd);
-
-  // Lock inputs
-  letterInputs.forEach(inp => inp.readOnly = true);
+  }, totalFlightTime + 1000);
 }
 
 /* ==========================
