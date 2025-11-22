@@ -22,8 +22,7 @@
         url('data:image/svg+xml,%3Csvg width="120" height="120" xmlns="http://www.w3.org/2000/svg"%3E%3Ctext x="15" y="65" font-size="22" fill="%23f2d4d4"%3E✦%3C/text%3E%3C/svg%3E');
       background-repeat: repeat;
       overflow-x: hidden;
-      /* base space so clue bar doesn't overlap content on desktop */
-      padding-bottom: 75px;
+      padding-bottom: 75px; /* base room so clue bar doesn't overlap content on desktop */
     }
 
     h1 {
@@ -65,7 +64,7 @@
       gap: 12px;
       align-items: center;
       justify-content: center;
-      flex-wrap: wrap; /* makes buttons wrap on small screens */
+      flex-wrap: wrap;
     }
 
     #hintButton {
@@ -105,16 +104,16 @@
       stroke: #ffffff;
     }
 
-    /* Responsive wrapper so the frame can scroll nicely on small screens */
+    /* Wrapper so we can center / scroll horizontally if ever needed */
     #frameWrapper {
       width: 100%;
       display: flex;
       justify-content: center;
-      overflow-x: auto;
+      overflow-x: hidden;
       padding: 0 10px;
     }
 
-    /* Puzzle frame */
+    /* Puzzle frame – OPTION A: frame not scaled, just wraps puzzle */
     #frame {
       padding: 15px;
       border: 8px solid #b30000;
@@ -125,8 +124,7 @@
       transition: all 0.8s ease;
       position: relative;
       transform-origin: top center;
-      /* keep red frame tightly around the puzzle */
-      width: max-content;
+      width: max-content; /* keep border hugging the puzzle */
     }
 
     /* Crossword grid */
@@ -134,7 +132,7 @@
       display: grid;
       grid-template-columns: repeat(15, min(32px, 5vw));
       grid-auto-rows: min(32px, 5vw);
-      gap: 0; /* cells touch */
+      gap: 0;
       transition: opacity 0.6s ease;
       justify-content: center;
     }
@@ -143,7 +141,7 @@
       width: 100%;
       height: 100%;
       box-sizing: border-box;
-      border-radius: 2px; /* reduced rounding */
+      border-radius: 2px;
       border: 1px solid rgba(0,0,0,0.15);
       background: rgba(255,255,255,0.95);
       display: flex;
@@ -179,6 +177,7 @@
       font-weight: 600;
       text-transform: uppercase;
       color: #222;
+      line-height: 1; /* help avoid visual cropping */
     }
 
     .cross-input.incorrect {
@@ -342,14 +341,14 @@
       100% { box-shadow: 0 0 0 4px rgba(212,175,55,0.7); background: #fff6c2; }
     }
 
-    /* Bottom sliding clue popup */
+    /* Bottom clue popup (desktop baseline) */
     #clueBar {
       position: fixed;
       left: 0;
       right: 0;
       bottom: 0;
       transform: translateY(100%);
-      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease;
+      transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease, bottom 0.2s ease;
       background: rgba(255,255,255,0.96);
       box-shadow: 0 -4px 14px rgba(0,0,0,0.25);
       padding: 10px 16px 14px;
@@ -377,7 +376,7 @@
 
     #clueText {
       font-size: 15px;
-      font-weight: 600; /* bold clue text */
+      font-weight: 600;
     }
 
     #clueBar.visible {
@@ -395,39 +394,38 @@
       100% { transform: translateY(0) scale(1); opacity: 1; }
     }
 
+    /* When the on-screen keyboard is open, we push the clue bar up
+       so it sits above the keyboard and overlaps the puzzle if needed */
+    body.keyboard-open #clueBar {
+      bottom: 40vh; /* tune if needed */
+    }
+
     /* MOBILE ADJUSTMENTS */
     @media (max-width: 600px) {
-      /* more space because of sticky clue bar & keyboard */
       body {
-        padding-bottom: 140px;
+        padding-bottom: 140px; /* extra room because of keyboard movement */
       }
 
-      /* remove transform scaling (this caused crashes) */
+      /* don't transform the frame, just the grid size */
       #frame {
-        max-width: none;
+        max-width: 100%;
         transform: none !important;
       }
 
-      /* make cells smaller instead of scaling the whole thing */
+      /* OPTION A: scale grid cells so puzzle ~fits screen width */
       #puzzle {
-        grid-template-columns: repeat(15, 7vw);
-        grid-auto-rows: 7vw;
+        grid-template-columns: repeat(15, min(6vw, 24px));
+        grid-auto-rows: min(6vw, 24px);
       }
 
-      /* prevent zoom / cut-off letters on mobile */
+      /* larger, responsive font so it's crisp and not cropped */
       .cross-input {
-        font-size: 17px !important;
+        font-size: clamp(14px, 4.5vw, 18px) !important;
       }
 
-      /* clue bar sticks above keyboard instead of being hidden behind it */
-      #clueBar {
-        position: sticky;
-        bottom: 0;
-      }
-
-      /* ensure red frame may extend off-screen but stays tight to puzzle */
       #frameWrapper {
-        justify-content: flex-start; /* allow horizontal scrolling */
+        justify-content: center;
+        overflow-x: hidden;
       }
 
       #clueText {
@@ -460,11 +458,9 @@
     </button>
   </div>
 
-  <!-- Responsive wrapper around the frame -->
   <div id="frameWrapper">
     <div id="frame">
       <div id="puzzle"></div>
-      <!-- Just kept for parity if needed; not shown -->
     </div>
   </div>
 
@@ -520,8 +516,6 @@ const solutionRows = [
 const ROWS = solutionRows.length;
 const COLS = solutionRows[0].length;
 
-/* Entries with numbers & clues (real answers only) */
-
 const entries = [
   // ACROSS (1–15)
   { num: 1,  answer: "AC",             row: 0, col: 0,  dir: "across", clue: "engl. Abk. Klimaanlage" },
@@ -549,10 +543,7 @@ const entries = [
   { num: 21, answer: "DANIEL",    row: 1, col: 2,  dir: "down", clue: "ein richtiger Ochse" },
   { num: 22, answer: "EIER",      row: 1, col: 14, dir: "down", clue: "mag Felice nicht" },
   { num: 23, answer: "KIWI",      row: 2, col: 1,  dir: "down", clue: "mag Felice - die Frucht oder den Vogel?" },
-
-  // 24 war in deiner Liste als TINTE (Down), liegt im Gitter aber waagrecht
   { num: 24, answer: "TINTE",     row: 3, col: 0,  dir: "across", clue: "Umbridge hat es Harry zur Strafe weggenommen" },
-
   { num: 25, answer: "ANOMIE",    row: 7, col: 1,  dir: "down", clue: "Zustand der Normlosigkeit oder des Zusammenbruchs gesellschaftlicher Normen" },
   { num: 26, answer: "KAMINE",    row: 7, col: 8,  dir: "down", clue: "gibt es viele in der Winkelgasse - nicht gut wenn du nuschelst" },
   { num: 27, answer: "GIRLMATH",  row: 3, col: 6,  dir: "down", clue: "wenn 20 + 4 = 807 ergibt" },
@@ -562,8 +553,6 @@ const entries = [
   { num: 31, answer: "EUROPA",    row: 6, col: 14, dir: "down", clue: "Dame auf der Rückseite der griechischen 2EUR Münze" },
   { num: 32, answer: "ASIA",      row: 6, col: 3,  dir: "down", clue: "größter Kontinent auf Englisch" },
   { num: 33, answer: "LIZENZ",    row: 4, col: 5,  dir: "down", clue: "James Bond hat sie zum töten, ich nur zum Boot fahren" },
-
-  // Ergänzt: FINGER als eigenständiges Wort
   { num: 33, answer: "HAMILTON",  row: 3, col: 12, dir: "down", clue: "who does Elizabeth Schuyer feel helpless about?" },
   { num: 34, answer: "FINGER",    row: 7, col: 0,  dir: "down", clue: "Körperteil an dem normalerweise Haut sein sollte"}
 ];
@@ -730,6 +719,7 @@ function initCrossword() {
         input.addEventListener("input", handleInput);
         input.addEventListener("focus", () => {
           selectCell(r, c, false, true); // preserve direction on focus
+          document.body.classList.add('keyboard-open');
           setTimeout(() => input.select(), 0);
         });
         input.addEventListener("click", () => {
@@ -737,6 +727,13 @@ function initCrossword() {
         });
         input.addEventListener("blur", () => {
           input.classList.add("no-caret");
+          // small delay so focus can move to another input without flicker
+          setTimeout(() => {
+            const ae = document.activeElement;
+            if (!ae || !ae.classList || !ae.classList.contains('cross-input')) {
+              document.body.classList.remove('keyboard-open');
+            }
+          }, 100);
         });
 
         cell.appendChild(input);
@@ -833,10 +830,6 @@ function showClueForEntry(entryIndex) {
 
 /**
  * selectCell(row, col, toggleDirection=false, preserveDir=false)
- * Option C behaviour:
- * - If a new word is selected (different entry index, not just direction toggle on same cell),
- *   cursor jumps to the start of that word.
- * - Otherwise caret stays on the current cell.
  */
 function selectCell(row, col, toggleDirection = false, preserveDir = false) {
   const meta = cellMeta[row][col];
@@ -856,9 +849,7 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
   let chosenDir = null;
   let chosenEntryIndex = null;
 
-  // Direction logic
   if (toggleDirection && sameCell && hasAcross && hasDown) {
-    // Toggle direction
     if (activeDir === "across" && hasDown) {
       chosenDir = "down";
       chosenEntryIndex = meta.down.entryIndex;
@@ -873,11 +864,9 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
       chosenEntryIndex = meta.down.entryIndex;
     }
   } else if (preserveDir && activeDir && meta[activeDir]) {
-    // Keep current direction if possible (auto-advance etc.)
     chosenDir = activeDir;
     chosenEntryIndex = meta[activeDir].entryIndex;
   } else {
-    // First selection or different cell → prefer across, else down
     if (hasAcross) {
       chosenDir = "across";
       chosenEntryIndex = meta.across.entryIndex;
@@ -911,11 +900,10 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
 
   showClueForEntry(activeEntryIndex);
 
-  // Decide whether to jump to start (Option C)
   const newWordSelected =
     activeEntryIndex != null &&
     activeEntryIndex !== prevEntryIndex &&
-    !(sameCell && toggleDirection); // don't jump when just toggling direction on same cell
+    !(sameCell && toggleDirection);
 
   if (activeEntryIndex != null && newWordSelected) {
     const entry = entries[activeEntryIndex];
@@ -930,7 +918,6 @@ function selectCell(row, col, toggleDirection = false, preserveDir = false) {
       }
     }
   } else {
-    // Keep caret on current cell but hidden
     const m = cellMeta[row][col];
     if (m && m.cell) {
       const inp = m.cell.querySelector("input");
@@ -950,12 +937,10 @@ function handleInput(e) {
   const row = parseInt(input.dataset.row, 10);
   const col = parseInt(input.dataset.col, 10);
 
-  // caret visible while typing
   input.classList.remove("no-caret");
 
   let val = input.value;
 
-  // Case: deletion / backspace → move backwards in current word
   if (!val) {
     if (lastKeyWasBackspace && activeEntryIndex != null && activeDir) {
       const metaDir = cellMeta[row][col][activeDir];
@@ -988,7 +973,6 @@ function handleInput(e) {
     applyHintMode();
   }
 
-  // Auto-advance within active word (keep direction), skipping already-filled cells
   if (activeEntryIndex != null && activeDir) {
     const metaDir = cellMeta[row][col][activeDir];
     if (metaDir) {
@@ -1008,7 +992,6 @@ function handleInput(e) {
       }
     }
   } else {
-    // no active word: go right if possible
     if (col + 1 < COLS && cellMeta[row][col + 1].cell) {
       const nextInput = cellMeta[row][col + 1].cell.querySelector("input");
       if (nextInput) {
@@ -1076,7 +1059,6 @@ function onWin() {
   }
   startConfetti();
 
-  // Highlight finalCells
   finalCells.forEach(pos => {
     const meta = cellMeta[pos.row][pos.col];
     if (meta && meta.cell) {
@@ -1084,7 +1066,6 @@ function onWin() {
     }
   });
 
-  // Build animated final phrase letters
   finalPhraseLettersEl.innerHTML = "";
   let delay = 0;
   for (const ch of finalPhrase) {
@@ -1092,11 +1073,10 @@ function onWin() {
     span.textContent = ch;
     span.className = "final-letter";
     span.style.animationDelay = (delay / 1000) + "s";
-    delay += 50; // stagger letters
+    delay += 50;
     finalPhraseLettersEl.appendChild(span);
   }
 
-  // Show overlay + win card
   winOverlay.style.display = "block";
   winMessage.style.display = "block";
   setTimeout(() => {
@@ -1109,7 +1089,6 @@ function onWin() {
     restartBtn.style.transform = "translateY(0)";
   }, 600);
 
-  // Lock inputs
   letterInputs.forEach(inp => inp.readOnly = true);
 }
 
