@@ -789,6 +789,33 @@ function initCrossword() {
     }
   });
 
+// ==========================
+// Solve Button
+// ==========================
+
+// Pressing the Solve button fills the entire puzzle with all correct letters
+document.getElementById("solveButton").addEventListener("click", () => {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = solutionRows[r][c];
+      if (ch !== "#") {
+        const meta = cellMeta[r][c];
+        if (meta && meta.cell) {
+          const inp = meta.cell.querySelector("input");
+          if (inp) {
+            inp.value = ch.toUpperCase();
+            inp.classList.remove("incorrect");
+          }
+        }
+      }
+    }
+  }
+  
+  // After filling everything, trigger the win animation
+  checkWin();
+});
+
+
   computeFinalCells();
 }
 
